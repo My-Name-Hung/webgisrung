@@ -1,3 +1,4 @@
+import { useTour } from "@reactour/tour";
 import { useEffect, useState } from "react";
 import {
   FaBars,
@@ -12,10 +13,18 @@ import {
   FaUser,
 } from "react-icons/fa";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { layoutSteps } from "../../config/tourSteps";
+import {
+  dashboardSteps,
+  forestIndicesSteps,
+  forestMapSteps,
+  forestPlanningSteps,
+  forestStatusSteps,
+  layoutSteps,
+  monitoringSteps,
+  userModalSteps,
+} from "../../config/tourSteps";
 import { useAuth } from "../../context/AuthContext";
 import { useTourContext } from "../../context/TourContext";
-import useTour from "../../hooks/useTour";
 import UserModal from "../UserModal/UserModal";
 import styles from "./Layout.module.css";
 
@@ -27,7 +36,28 @@ const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { resetTourHistory } = useTourContext();
-  const { startTour, forceTour } = useTour(layoutSteps);
+  const { setSteps, setIsOpen } = useTour();
+
+  // Function to get tour steps based on current route
+  const getTourSteps = () => {
+    const path = location.pathname;
+    switch (path) {
+      case "/dashboard":
+        return [...layoutSteps, ...dashboardSteps];
+      case "/forest-map":
+        return [...layoutSteps, ...forestMapSteps];
+      case "/monitoring-points":
+        return [...layoutSteps, ...monitoringSteps];
+      case "/indices":
+        return [...layoutSteps, ...forestIndicesSteps];
+      case "/forest-status":
+        return [...layoutSteps, ...forestStatusSteps];
+      case "/planning":
+        return [...layoutSteps, ...forestPlanningSteps];
+      default:
+        return layoutSteps;
+    }
+  };
 
   useEffect(() => {
     // Check system preference
@@ -46,6 +76,21 @@ const Layout = () => {
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
+  useEffect(() => {
+    // Update tour steps when route changes
+    if (!isUserModalOpen) {
+      setSteps(getTourSteps());
+    }
+  }, [location.pathname, isUserModalOpen, setSteps]);
+
+  useEffect(() => {
+    // Start user modal tour when modal is opened
+    if (isUserModalOpen) {
+      setSteps(userModalSteps);
+      setIsOpen(true);
+    }
+  }, [isUserModalOpen, setSteps, setIsOpen]);
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -59,9 +104,25 @@ const Layout = () => {
     setIsDarkMode(!isDarkMode);
   };
 
+  const handleStartTour = () => {
+    setSteps(getTourSteps());
+    setIsOpen(true);
+  };
+
   const handleResetTour = () => {
     resetTourHistory();
-    forceTour();
+    setSteps(getTourSteps());
+    setIsOpen(true);
+  };
+
+  const handleOpenUserModal = () => {
+    setIsUserModalOpen(true);
+  };
+
+  const handleCloseUserModal = () => {
+    setIsUserModalOpen(false);
+    setSteps(getTourSteps()); // Reset to current route's steps
+    setIsOpen(false);
   };
 
   const navItems = [
@@ -98,11 +159,12 @@ const Layout = () => {
   ];
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.layout} data-tour="layout">
       <aside
         className={`${styles.sidebar} ${
           !isSidebarOpen ? styles.collapsed : ""
         }`}
+        data-tour="sidebar"
       >
         <div className={styles.sidebarHeader}>
           <h1>QUẢN LÝ RỪNG</h1>
@@ -133,7 +195,7 @@ const Layout = () => {
           <div className={styles.tourButtons}>
             <button
               className={styles.tourButton}
-              onClick={startTour}
+              onClick={handleStartTour}
               title="Xem hướng dẫn"
             >
               <FaQuestionCircle />
@@ -151,8 +213,9 @@ const Layout = () => {
 
           <div
             className={styles.userInfo}
-            onClick={() => setIsUserModalOpen(true)}
+            onClick={handleOpenUserModal}
             style={{ cursor: "pointer" }}
+            data-tour="userInfo"
           >
             <FaUser className={styles.userIcon} />
             <div className={styles.userDetails}>
@@ -181,7 +244,7 @@ const Layout = () => {
 
       <UserModal
         isOpen={isUserModalOpen}
-        onClose={() => setIsUserModalOpen(false)}
+        onClose={handleCloseUserModal}
         admin={admin}
         onLogout={handleLogout}
         isDarkMode={isDarkMode}

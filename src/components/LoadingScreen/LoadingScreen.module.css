@@ -45,10 +45,7 @@
 .title {
   font-size: 2rem;
   font-weight: 600;
-  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #2d5a27;
   text-align: center;
   opacity: 0;
   animation: fadeIn 0.5s ease-in-out forwards;

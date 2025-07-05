@@ -1,5 +1,7 @@
+import { useTour } from "@reactour/tour";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { forestMapSteps } from "../../config/tourSteps";
 import styles from "./ForestMap.module.css";
 
 const ForestMap = () => {
@@ -10,10 +12,19 @@ const ForestMap = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { setSteps, setIsOpen } = useTour();
 
   useEffect(() => {
     fetchGeoJSONList();
   }, []);
+
+  useEffect(() => {
+    // Start tour when data is loaded
+    if (geojsonList.length > 0) {
+      setSteps(forestMapSteps);
+      setIsOpen(true);
+    }
+  }, [geojsonList, setSteps, setIsOpen]);
 
   const fetchGeoJSONList = async () => {
     try {
@@ -87,7 +98,7 @@ const ForestMap = () => {
     <div className={styles.forestMap}>
       <h1 className={styles.title}>Quản lý bản đồ</h1>
 
-      <div className={styles.uploadSection}>
+      <div className={`${styles.uploadSection} uploadSection`}>
         <h2>Tải lên bản đồ mới</h2>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -142,7 +153,7 @@ const ForestMap = () => {
         </form>
       </div>
 
-      <div className={styles.mapList}>
+      <div className={`${styles.mapList} mapList`}>
         <h2>Danh sách bản đồ</h2>
 
         {geojsonList.length === 0 ? (

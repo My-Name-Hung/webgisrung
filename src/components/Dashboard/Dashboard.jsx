@@ -1,3 +1,4 @@
+import { useTour } from "@reactour/tour";
 import axios from "axios";
 import {
   ArcElement,
@@ -14,7 +15,6 @@ import {
 import React, { useEffect, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import { dashboardSteps } from "../../config/tourSteps";
-import useTour from "../../hooks/useTour";
 import styles from "./Dashboard.module.css";
 
 // Đăng ký các thành phần ChartJS
@@ -34,7 +34,7 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { startTour } = useTour(dashboardSteps);
+  const { setSteps, setIsOpen } = useTour();
 
   useEffect(() => {
     fetchDashboardData();
@@ -43,9 +43,10 @@ const Dashboard = () => {
   useEffect(() => {
     // Start tour when data is loaded
     if (dashboardData && !loading) {
-      startTour();
+      setSteps(dashboardSteps);
+      setIsOpen(true);
     }
-  }, [dashboardData, loading]);
+  }, [dashboardData, loading, setSteps, setIsOpen]);
 
   const fetchDashboardData = async () => {
     try {
@@ -118,7 +119,7 @@ const Dashboard = () => {
     <div className={styles.dashboard}>
       <h1 className={styles.title}>Tổng quan</h1>
 
-      <div className={styles.statsGrid}>
+      <div className={`${styles.statsGrid} statsGrid`} data-tour="statsGrid">
         <div className={styles.statCard}>
           <h3>Tổng diện tích rừng</h3>
           <p className={styles.statValue}>
@@ -144,7 +145,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className={styles.chartsGrid}>
+      <div className={`${styles.chartsGrid} chartsGrid`} data-tour="chartsGrid">
         <div className={styles.chartCard}>
           <h3>Diện tích theo loại rừng</h3>
           <Bar

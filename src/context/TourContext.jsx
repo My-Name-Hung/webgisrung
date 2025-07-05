@@ -12,19 +12,30 @@ export const useTourContext = () => {
 
 export const TourProvider = ({ children }) => {
   const [visitedPages, setVisitedPages] = useState(() => {
-    const saved = localStorage.getItem("visitedPages");
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem("visitedPages");
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.error("Error loading visited pages:", error);
+      return {};
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem("visitedPages", JSON.stringify(visitedPages));
+    try {
+      localStorage.setItem("visitedPages", JSON.stringify(visitedPages));
+    } catch (error) {
+      console.error("Error saving visited pages:", error);
+    }
   }, [visitedPages]);
 
   const markPageAsVisited = (pagePath) => {
-    setVisitedPages((prev) => ({
-      ...prev,
-      [pagePath]: true,
-    }));
+    if (!visitedPages[pagePath]) {
+      setVisitedPages((prev) => ({
+        ...prev,
+        [pagePath]: true,
+      }));
+    }
   };
 
   const hasVisitedPage = (pagePath) => {
@@ -33,7 +44,11 @@ export const TourProvider = ({ children }) => {
 
   const resetTourHistory = () => {
     setVisitedPages({});
-    localStorage.removeItem("visitedPages");
+    try {
+      localStorage.removeItem("visitedPages");
+    } catch (error) {
+      console.error("Error resetting tour history:", error);
+    }
   };
 
   const value = {

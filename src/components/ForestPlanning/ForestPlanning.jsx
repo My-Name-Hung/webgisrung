@@ -1,5 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { forestPlanningSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import styles from "./ForestPlanning.module.css";
 
 const ForestPlanning = () => {
@@ -16,10 +18,18 @@ const ForestPlanning = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { startTour } = useCustomTour(forestPlanningSteps);
 
   useEffect(() => {
     fetchPlanningData();
   }, []);
+
+  useEffect(() => {
+    // Start tour when data is loaded
+    if (planningList.length > 0) {
+      startTour();
+    }
+  }, [planningList, startTour]);
 
   const fetchPlanningData = async () => {
     try {
@@ -211,3 +221,4 @@ const ForestPlanning = () => {
 };
 
 export default ForestPlanning;
+ 

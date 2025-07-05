@@ -39,6 +39,8 @@ const UserModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [editingField, setEditingField] = useState(null);
 
+  if (!isOpen) return null;
+
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswords((prev) => ({
@@ -84,7 +86,7 @@ const UserModal = ({
     setSuccess("");
 
     try {
-      const response = await axios.patch(
+      await axios.patch(
         `${import.meta.env.VITE_SERVER_URL}/api/auth/profile`,
         {
           [field]: value,
@@ -134,7 +136,7 @@ const UserModal = ({
     setSuccess("");
 
     try {
-      const response = await axios.post(
+      await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/api/auth/reset-password`,
         {
           currentPassword: passwords.currentPassword,
@@ -218,11 +220,13 @@ const UserModal = ({
     );
   };
 
-  if (!isOpen) return null;
-
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modalContent}
+        onClick={(e) => e.stopPropagation()}
+        data-tour="modalContent"
+      >
         <button
           className={styles.closeButton}
           onClick={onClose}
@@ -240,6 +244,7 @@ const UserModal = ({
                 ? "Chuyển sang giao diện sáng"
                 : "Chuyển sang giao diện tối"
             }
+            data-tour="themeSwitch"
           >
             <input
               type="checkbox"
@@ -254,7 +259,7 @@ const UserModal = ({
           </label>
         </div>
 
-        <div className={styles.tabs}>
+        <div className={styles.tabs} data-tour="userTabs">
           <button
             className={`${styles.tab} ${
               activeTab === "info" ? styles.active : ""
@@ -275,7 +280,7 @@ const UserModal = ({
 
         <div className={styles.tabContent}>
           {activeTab === "info" ? (
-            <div className={styles.userInfo}>
+            <div className={styles.userInfo} data-tour="userInfo">
               {renderEditableField(
                 "username",
                 username,
@@ -307,7 +312,11 @@ const UserModal = ({
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className={styles.passwordForm}>
+            <form
+              onSubmit={handleSubmit}
+              className={styles.passwordForm}
+              data-tour="passwordForm"
+            >
               {error && <div className={styles.error}>{error}</div>}
               {success && <div className={styles.success}>{success}</div>}
 

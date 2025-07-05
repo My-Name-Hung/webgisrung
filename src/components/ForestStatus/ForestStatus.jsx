@@ -1,6 +1,8 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
+import { forestStatusSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import styles from "./ForestStatus.module.css";
 
 const ForestStatus = () => {
@@ -14,10 +16,18 @@ const ForestStatus = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { startTour } = useCustomTour(forestStatusSteps);
 
   useEffect(() => {
     fetchStatus();
   }, []);
+
+  useEffect(() => {
+    // Start tour when data is loaded
+    if (statusList.length > 0) {
+      startTour();
+    }
+  }, [statusList, startTour]);
 
   const fetchStatus = async () => {
     try {
@@ -85,7 +95,7 @@ const ForestStatus = () => {
     <div className={styles.forestStatus}>
       <h1 className={styles.title}>Quản lý hiện trạng rừng</h1>
 
-      <div className={styles.formSection}>
+      <div className={`${styles.formSection} formSection`}>
         <h2>Thêm hiện trạng mới</h2>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -165,7 +175,7 @@ const ForestStatus = () => {
         </form>
       </div>
 
-      <div className={styles.chartSection}>
+      <div className={`${styles.chartSection} chartSection`}>
         <h2>Biểu đồ diện tích theo loại rừng</h2>
         <div className={styles.chart}>
           <Bar
@@ -191,7 +201,7 @@ const ForestStatus = () => {
         </div>
       </div>
 
-      <div className={styles.statusList}>
+      <div className={`${styles.statusList} statusList`}>
         <h2>Danh sách hiện trạng</h2>
 
         {statusList.length === 0 ? (
@@ -221,3 +231,4 @@ const ForestStatus = () => {
 };
 
 export default ForestStatus;
+ 

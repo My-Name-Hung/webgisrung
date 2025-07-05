@@ -1,128 +1,123 @@
 export const layoutSteps = [
   {
-    element: ".layout",
-    intro: "Chào mừng bạn đến với Hệ thống quản lý rừng!",
+    selector: '[data-tour="layout"]',
+    content: "Chào mừng bạn đến với Hệ thống quản lý rừng!",
     position: "center",
   },
   {
-    element: ".sidebar",
-    intro: "Đây là thanh điều hướng chính của hệ thống",
+    selector: '[data-tour="sidebarHeader"]',
+    content: "Đây là thanh điều hướng chính của hệ thống",
     position: "right",
   },
   {
-    element: ".userInfo",
-    intro: "Quản lý thông tin tài khoản và cài đặt của bạn",
+    selector: '[data-tour="userInfo"]',
+    content: "Quản lý thông tin tài khoản và cài đặt của bạn",
     position: "top",
   },
 ];
 
 export const dashboardSteps = [
   {
-    element: ".statsGrid",
-    intro: "Xem tổng quan các chỉ số quan trọng",
-    position: "bottom",
+    selector: '[data-tour="statsGrid"]',
+    content:
+      "Thống kê tổng quan về diện tích rừng, điểm quan trắc và kế hoạch quy hoạch.",
   },
   {
-    element: ".chartsGrid",
-    intro: "Biểu đồ thống kê chi tiết về hiện trạng rừng",
-    position: "top",
+    selector: '[data-tour="chartsGrid"]',
+    content:
+      "Biểu đồ thống kê về diện tích theo loại rừng, chất lượng rừng và chỉ số phát triển theo năm.",
   },
 ];
 
 export const forestMapSteps = [
   {
-    element: ".uploadSection",
-    intro: "Tải lên bản đồ GeoJSON mới",
-    position: "bottom",
+    selector: ".uploadSection",
+    content:
+      "Khu vực tải lên bản đồ mới. Bạn có thể tải lên file GeoJSON với thông tin tên và loại bản đồ.",
   },
   {
-    element: ".mapList",
-    intro: "Quản lý danh sách bản đồ đã tải lên",
-    position: "top",
+    selector: ".mapList",
+    content:
+      "Danh sách các bản đồ đã tải lên. Bạn có thể xem thông tin và xóa bản đồ tại đây.",
   },
 ];
 
 export const monitoringSteps = [
   {
-    element: ".formSection",
-    intro: "Thêm điểm quan trắc mới",
-    position: "bottom",
+    selector: ".formSection",
+    content:
+      "Thêm điểm quan trắc mới với thông tin về tên, loại, trạng thái và tọa độ.",
   },
   {
-    element: ".coordinates",
-    intro: "Nhập tọa độ điểm quan trắc",
-    position: "right",
-  },
-  {
-    element: ".pointsList",
-    intro: "Xem và quản lý các điểm quan trắc",
-    position: "top",
+    selector: ".pointsList",
+    content:
+      "Danh sách các điểm quan trắc hiện có. Bạn có thể xem, sửa và xóa điểm quan trắc tại đây.",
   },
 ];
 
 export const forestIndicesSteps = [
   {
-    element: ".formSection",
-    intro: "Thêm chỉ số rừng mới",
-    position: "bottom",
+    selector: ".formSection",
+    content:
+      "Thêm chỉ số rừng mới với thông tin về tên, giá trị, đơn vị, năm và danh mục.",
   },
   {
-    element: ".chartSection",
-    intro: "Biểu đồ theo dõi chỉ số theo thời gian",
-    position: "top",
+    selector: ".chartSection",
+    content: "Biểu đồ thể hiện sự thay đổi của các chỉ số theo thời gian.",
   },
   {
-    element: ".indicesList",
-    intro: "Danh sách các chỉ số đã thêm",
-    position: "top",
+    selector: ".indicesList",
+    content: "Danh sách các chỉ số rừng đã được ghi nhận.",
   },
 ];
 
 export const forestStatusSteps = [
   {
-    element: ".formSection",
-    intro: "Cập nhật hiện trạng rừng",
-    position: "bottom",
+    selector: ".formSection",
+    content:
+      "Thêm hiện trạng rừng mới với thông tin về loại rừng, diện tích, chất lượng và ngày khảo sát.",
   },
   {
-    element: ".chartSection",
-    intro: "Biểu đồ phân bố diện tích theo loại rừng",
-    position: "top",
+    selector: ".chartSection",
+    content: "Biểu đồ thể hiện diện tích theo từng loại rừng.",
   },
   {
-    element: ".statusList",
-    intro: "Danh sách hiện trạng rừng",
-    position: "top",
+    selector: ".statusList",
+    content:
+      "Danh sách hiện trạng rừng với thông tin chi tiết về từng khu vực.",
   },
 ];
 
 export const forestPlanningSteps = [
   {
-    element: ".formSection",
-    intro: "Thêm kế hoạch quy hoạch mới",
-    position: "bottom",
+    selector: ".formSection",
+    content:
+      "Thêm quy hoạch rừng mới với thông tin về tên, diện tích, loại quy hoạch và thời gian thực hiện.",
   },
   {
-    element: ".planningList",
-    intro: "Theo dõi danh sách quy hoạch",
-    position: "top",
+    selector: ".planningList",
+    content:
+      "Danh sách các quy hoạch rừng với thông tin chi tiết và trạng thái thực hiện.",
   },
 ];
 
 export const userModalSteps = [
   {
-    element: ".modalContent",
-    intro: "Quản lý thông tin tài khoản",
+    selector: '[data-tour="modalContent"]',
+    content: "Quản lý thông tin tài khoản cá nhân và cài đặt hệ thống",
     position: "center",
+    scrollIntoView: false,
   },
   {
-    element: ".tabs",
-    intro: "Chuyển đổi giữa thông tin và đổi mật khẩu",
+    selector: '[data-tour="userTabs"]',
+    content: "Chuyển đổi giữa xem thông tin và đổi mật khẩu",
     position: "bottom",
+    scrollIntoView: true,
   },
   {
-    element: ".themeSwitch",
-    intro: "Chuyển đổi giao diện sáng/tối",
+    selector: '[data-tour="themeSwitch"]',
+    content: "Tùy chỉnh giao diện sáng/tối theo sở thích",
     position: "left",
+    scrollIntoView: true,
   },
 ];

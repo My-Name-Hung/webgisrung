@@ -10,6 +10,7 @@
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@reactour/tour": "^3.8.0",
     "axios": "^1.6.2",
     "chart.js": "^4.5.0",
     "intro.js": "^7.2.0",

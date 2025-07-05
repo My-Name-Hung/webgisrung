@@ -1,6 +1,8 @@
+import { useTour } from "@reactour/tour";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
+import { forestIndicesSteps } from "../../config/tourSteps";
 import styles from "./ForestIndices.module.css";
 
 const ForestIndices = () => {
@@ -15,10 +17,19 @@ const ForestIndices = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { setSteps, setIsOpen } = useTour();
 
   useEffect(() => {
     fetchIndices();
   }, []);
+
+  useEffect(() => {
+    // Start tour when data is loaded
+    if (indices.length > 0) {
+      setSteps(forestIndicesSteps);
+      setIsOpen(true);
+    }
+  }, [indices, setSteps, setIsOpen]);
 
   const fetchIndices = async () => {
     try {
@@ -85,7 +96,7 @@ const ForestIndices = () => {
     <div className={styles.forestIndices}>
       <h1 className={styles.title}>Quản lý chỉ số rừng</h1>
 
-      <div className={styles.formSection}>
+      <div className={`${styles.formSection} formSection`}>
         <h2>Thêm chỉ số mới</h2>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -177,7 +188,7 @@ const ForestIndices = () => {
         </form>
       </div>
 
-      <div className={styles.chartSection}>
+      <div className={`${styles.chartSection} chartSection`}>
         <h2>Biểu đồ chỉ số theo thời gian</h2>
         <div className={styles.chart}>
           <Line
@@ -199,7 +210,7 @@ const ForestIndices = () => {
         </div>
       </div>
 
-      <div className={styles.indicesList}>
+      <div className={`${styles.indicesList} indicesList`}>
         <h2>Danh sách chỉ số</h2>
 
         {indices.length === 0 ? (

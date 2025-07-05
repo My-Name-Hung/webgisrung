@@ -1,5 +1,7 @@
+import { useTour } from "@reactour/tour";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import { monitoringSteps } from "../../config/tourSteps";
 import styles from "./MonitoringPoints.module.css";
 
 const MonitoringPoints = () => {
@@ -17,10 +19,19 @@ const MonitoringPoints = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { setSteps, setIsOpen } = useTour();
 
   useEffect(() => {
     fetchPoints();
   }, []);
+
+  useEffect(() => {
+    // Start tour when data is loaded
+    if (points.length > 0) {
+      setSteps(monitoringSteps);
+      setIsOpen(true);
+    }
+  }, [points, setSteps, setIsOpen]);
 
   const fetchPoints = async () => {
     try {
@@ -116,7 +127,7 @@ const MonitoringPoints = () => {
     <div className={styles.monitoringPoints}>
       <h1 className={styles.title}>Quản lý điểm quan trắc</h1>
 
-      <div className={styles.formSection}>
+      <div className={`${styles.formSection} formSection`}>
         <h2>
           {editingId ? "Cập nhật điểm quan trắc" : "Thêm điểm quan trắc mới"}
         </h2>
@@ -234,7 +245,7 @@ const MonitoringPoints = () => {
         </form>
       </div>
 
-      <div className={styles.pointsList}>
+      <div className={`${styles.pointsList} pointsList`}>
         <h2>Danh sách điểm quan trắc</h2>
 
         {points.length === 0 ? (
