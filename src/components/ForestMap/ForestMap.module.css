@@ -3,16 +3,22 @@
 }
 
 .title {
-  color: var(--text-primary);
+  color: #2d5a27;
   font-size: var(--font-size-2xl);
   margin-bottom: var(--spacing-xl);
+  position: relative;
+  display: inline-block;
 }
 
-.uploadSection {
-  background-color: var(--surface);
-  border-radius: var(--border-radius-lg);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 2px;
 }
 
 .uploadSection h2 {

@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import express from "express";
 import jwt from "jsonwebtoken";
 import auth from "../middleware/auth.js";
@@ -130,15 +129,14 @@ router.post("/reset-password", auth, async (req, res) => {
         .json({ message: "Không tìm thấy tài khoản admin" });
     }
 
-    // Verify current password
-    const isMatch = await bcrypt.compare(currentPassword, admin.password);
+    // Verify current password using model method
+    const isMatch = await admin.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
     }
 
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    admin.password = await bcrypt.hash(newPassword, salt);
+    // Set new password - will be hashed by pre('save') middleware
+    admin.password = newPassword;
 
     // Save updated password
     await admin.save();

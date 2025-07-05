@@ -17,19 +17,33 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      checkAuth(token);
-    } else {
-      setLoading(false);
-    }
+    const initAuth = async () => {
+      const token = localStorage.getItem("token");
+      const expiry = localStorage.getItem("tokenExpiry");
+
+      if (token) {
+        // Check if token has expired
+        if (expiry && new Date(expiry) < new Date()) {
+          handleLogout();
+        } else {
+          await checkAuth(token);
+        }
+      } else {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
   const checkAuth = async (token) => {
     try {
-      const response = await axios.get("/api/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/profile`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.data.success) {
         setAdmin(response.data.admin);
@@ -41,29 +55,43 @@ export const AuthProvider = ({ children }) => {
       console.error("Auth check failed:", error);
       handleLogout();
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000);
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("tokenExpiry");
     delete axios.defaults.headers.common["Authorization"];
     setAdmin(null);
     setError(null);
   };
 
-  const login = async (username, password) => {
+  const login = async (username, password, rememberMe = false) => {
     try {
       setError(null);
       setLoading(true);
 
-      const response = await axios.post("/api/auth/login", {
-        username,
-        password,
-      });
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/login`,
+        {
+          username,
+          password,
+        }
+      );
 
       if (response.data.success) {
         const { token, admin } = response.data;
+
+        // Set token expiry if remember me is checked
+        if (rememberMe) {
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + 30); // 30 days from now
+          localStorage.setItem("tokenExpiry", expiry.toISOString());
+        }
+
         localStorage.setItem("token", token);
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         setAdmin(admin);
@@ -91,14 +119,20 @@ export const AuthProvider = ({ children }) => {
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 2000);
     }
   };
 
   const updateProfile = async (updates) => {
     try {
       setError(null);
-      const response = await axios.patch("/api/auth/profile", updates);
+      setLoading(true);
+      const response = await axios.patch(
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/profile`,
+        updates
+      );
 
       if (response.data.success) {
         setAdmin(response.data.admin);
@@ -109,6 +143,8 @@ export const AuthProvider = ({ children }) => {
         error.response?.data?.message || "Cập nhật thông tin thất bại";
       setError(errorMessage);
       return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -122,11 +158,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

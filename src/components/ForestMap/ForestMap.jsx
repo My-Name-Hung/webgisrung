@@ -17,7 +17,9 @@ const ForestMap = () => {
 
   const fetchGeoJSONList = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/geojson");
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/geojson`
+      );
       setGeojsonList(response.data);
     } catch (err) {
       setError("Không thể tải danh sách bản đồ");
@@ -46,7 +48,7 @@ const ForestMap = () => {
         try {
           const geojsonData = JSON.parse(e.target.result);
 
-          await axios.post("http://localhost:5000/api/geojson", {
+          await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/geojson`, {
             name: mapName,
             type: mapType,
             data: geojsonData,
@@ -71,7 +73,9 @@ const ForestMap = () => {
 
   const handleDelete = async (name) => {
     try {
-      await axios.delete(`http://localhost:5000/api/geojson/${name}`);
+      await axios.delete(
+        `${import.meta.env.VITE_SERVER_URL}/api/geojson/${name}`
+      );
       setSuccess("Xóa bản đồ thành công");
       fetchGeoJSONList();
     } catch (err) {

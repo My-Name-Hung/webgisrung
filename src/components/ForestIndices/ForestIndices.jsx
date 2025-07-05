@@ -23,7 +23,7 @@ const ForestIndices = () => {
   const fetchIndices = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/forest/indices"
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/indices`
       );
       setIndices(response.data);
     } catch (err) {
@@ -46,7 +46,10 @@ const ForestIndices = () => {
     setSuccess("");
 
     try {
-      await axios.post("http://localhost:5000/api/forest/indices", formData);
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/indices`,
+        formData
+      );
       setSuccess("Thêm chỉ số rừng thành công");
       setFormData({
         name: "",

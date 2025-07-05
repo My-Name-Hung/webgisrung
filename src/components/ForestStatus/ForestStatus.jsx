@@ -22,7 +22,7 @@ const ForestStatus = () => {
   const fetchStatus = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/forest/status"
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/status`
       );
       setStatusList(response.data);
     } catch (err) {
@@ -45,7 +45,10 @@ const ForestStatus = () => {
     setSuccess("");
 
     try {
-      await axios.post("http://localhost:5000/api/forest/status", formData);
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/status`,
+        formData
+      );
       setSuccess("Thêm hiện trạng rừng thành công");
       setFormData({
         type: "",

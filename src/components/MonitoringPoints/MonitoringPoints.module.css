@@ -3,9 +3,22 @@
 }
 
 .title {
-  color: var(--text-primary);
+  color: #2d5a27;
   font-size: var(--font-size-2xl);
   margin-bottom: var(--spacing-xl);
+  position: relative;
+  display: inline-block;
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 2px;
 }
 
 .formSection {

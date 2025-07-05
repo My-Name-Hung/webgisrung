@@ -24,7 +24,9 @@ const MonitoringPoints = () => {
 
   const fetchPoints = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/monitoring");
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/monitoring`
+      );
       setPoints(response.data);
     } catch (err) {
       setError("Không thể tải danh sách điểm quan trắc");
@@ -58,12 +60,15 @@ const MonitoringPoints = () => {
     try {
       if (editingId) {
         await axios.put(
-          `http://localhost:5000/api/monitoring/${editingId}`,
+          `${import.meta.env.VITE_SERVER_URL}/api/monitoring/${editingId}`,
           formData
         );
         setSuccess("Cập nhật điểm quan trắc thành công");
       } else {
-        await axios.post("http://localhost:5000/api/monitoring", formData);
+        await axios.post(
+          `${import.meta.env.VITE_SERVER_URL}/api/monitoring`,
+          formData
+        );
         setSuccess("Thêm điểm quan trắc thành công");
       }
 
@@ -97,7 +102,9 @@ const MonitoringPoints = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/monitoring/${id}`);
+      await axios.delete(
+        `${import.meta.env.VITE_SERVER_URL}/api/monitoring/${id}`
+      );
       setSuccess("Xóa điểm quan trắc thành công");
       fetchPoints();
     } catch (err) {

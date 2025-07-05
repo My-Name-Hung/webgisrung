@@ -40,7 +40,7 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/forest/dashboard"
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/dashboard`
       );
       setDashboardData(response.data);
       setLoading(false);

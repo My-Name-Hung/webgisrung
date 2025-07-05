@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { FaEye, FaEyeSlash, FaLock, FaTree, FaUser } from "react-icons/fa";
+import { FaLock, FaTree, FaUser } from "react-icons/fa";
+import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import { useLocation, useNavigate } from "react-router-dom";
+import logo from "../../assets/Logo/icon.png";
 import { useAuth } from "../../context/AuthContext";
 import styles from "./Login.module.css";
 
@@ -126,7 +128,7 @@ const Login = () => {
                 aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 disabled={isSubmitting}
               >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                {showPassword ? <VscEyeClosed /> : <VscEye />}
               </button>
             </div>
             {errors.password && (
@@ -147,6 +149,14 @@ const Login = () => {
           </button>
         </form>
       </div>
+      <footer className={styles.footer}>
+        <div className={styles.footerContent}>
+          <img src={logo} alt="Logo Kiểm lâm" className={styles.footerLogo} />
+          <p className={styles.footerText}>
+            @2025 - Chi cục Kiểm lâm Hải Phòng
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

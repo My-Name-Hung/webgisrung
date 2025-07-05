@@ -3,9 +3,22 @@
 }
 
 .title {
-  color: var(--text-primary);
+  color: #2d5a27;
   font-size: var(--font-size-2xl);
   margin-bottom: var(--spacing-xl);
+  position: relative;
+  display: inline-block;
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 2px;
 }
 
 .statsGrid {
@@ -16,20 +29,36 @@
 }
 
 .statCard {
-  background-color: var(--surface);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(45, 90, 39, 0.15);
 }
 
 .statCard h3 {
-  color: var(--text-secondary);
+  color: #2d5a27;
   font-size: var(--font-size-md);
   margin-bottom: var(--spacing-sm);
+  opacity: 0.8;
 }
 
 .statValue {
-  color: var(--primary);
+  background: linear-gradient(90deg, #2d5a27 0%, #1a472a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   font-size: var(--font-size-2xl);
   font-weight: 600;
 }
@@ -41,17 +70,37 @@
 }
 
 .chartCard {
-  background-color: var(--surface);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-lg);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .chartCard h3 {
-  color: var(--text-primary);
+  color: #2d5a27;
   font-size: var(--font-size-lg);
   margin-bottom: var(--spacing-lg);
   text-align: center;
+  position: relative;
+  padding-bottom: var(--spacing-sm);
+}
+
+.chartCard h3::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 1px;
 }
 
 .chartCard:last-child {
@@ -63,14 +112,14 @@
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  color: var(--text-secondary);
+  color: #2d5a27;
   font-size: var(--font-size-lg);
 }
 
 .error {
-  background-color: #fed7d7;
-  border: 1px solid #f56565;
-  color: #c53030;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #ef4444;
+  color: #b91c1c;
   padding: var(--spacing-md);
   border-radius: var(--border-radius-md);
   margin: var(--spacing-lg) 0;

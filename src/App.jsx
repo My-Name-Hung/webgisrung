@@ -14,6 +14,7 @@ import ForestMap from "./components/ForestMap/ForestMap";
 import ForestPlanning from "./components/ForestPlanning/ForestPlanning";
 import ForestStatus from "./components/ForestStatus/ForestStatus";
 import Layout from "./components/Layout/Layout";
+import LoadingScreen from "./components/LoadingScreen/LoadingScreen";
 import Login from "./components/Login/Login";
 import MonitoringPoints from "./components/MonitoringPoints/MonitoringPoints";
 
@@ -21,12 +22,21 @@ import MonitoringPoints from "./components/MonitoringPoints/MonitoringPoints";
 import "./App.module.css";
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
 const AppRoutes = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Routes>
@@ -45,10 +55,10 @@ const AppRoutes = () => {
       >
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="map" element={<ForestMap />} />
-        <Route path="monitoring" element={<MonitoringPoints />} />
+        <Route path="forest-map" element={<ForestMap />} />
+        <Route path="monitoring-points" element={<MonitoringPoints />} />
         <Route path="indices" element={<ForestIndices />} />
-        <Route path="status" element={<ForestStatus />} />
+        <Route path="forest-status" element={<ForestStatus />} />
         <Route path="planning" element={<ForestPlanning />} />
       </Route>
     </Routes>
