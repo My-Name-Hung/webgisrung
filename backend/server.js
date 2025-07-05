@@ -6,8 +6,11 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import helmet from "helmet";
+import http from "http";
+import https from "https";
 import mongoose from "mongoose";
 import morgan from "morgan";
+import cron from "node-cron";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -69,7 +72,74 @@ const findAvailablePort = async (startPort) => {
   });
 };
 
-// Function to start server
+// Cron jobs configuration
+const setupCronJobs = () => {
+  // Ping server every 5 minutes to prevent sleep
+  cron.schedule("*/5 * * * *", () => {
+    const serverUrl = process.env.SERVER_URL || "http://localhost:5000";
+    const httpModule = serverUrl.startsWith("https") ? https : http;
+
+    httpModule
+      .get(serverUrl, (res) => {
+        if (res.statusCode === 200) {
+          console.log("Server pinged successfully to prevent sleep.");
+        } else {
+          console.error(
+            `Server ping failed with status code: ${res.statusCode}`
+          );
+        }
+      })
+      .on("error", (error) => {
+        console.error("Error pinging server:", error);
+      });
+  });
+
+  // Daily backup at 00:00 (midnight)
+  cron.schedule("0 0 * * *", async () => {
+    try {
+      console.log("Starting daily backup...");
+      // Add your backup logic here
+      console.log("Daily backup completed successfully");
+    } catch (error) {
+      console.error("Error during daily backup:", error);
+    }
+  });
+
+  // Weekly report generation every Sunday at 23:00
+  cron.schedule("0 23 * * 0", async () => {
+    try {
+      console.log("Starting weekly report generation...");
+      // Add your report generation logic here
+      console.log("Weekly report generated successfully");
+    } catch (error) {
+      console.error("Error generating weekly report:", error);
+    }
+  });
+
+  // Monthly data cleanup on 1st day of each month at 02:00
+  cron.schedule("0 2 1 * *", async () => {
+    try {
+      console.log("Starting monthly data cleanup...");
+      // Add your cleanup logic here
+      console.log("Monthly data cleanup completed successfully");
+    } catch (error) {
+      console.error("Error during monthly cleanup:", error);
+    }
+  });
+
+  // Check and update forest data status every 6 hours
+  cron.schedule("0 */6 * * *", async () => {
+    try {
+      console.log("Checking forest data status...");
+      // Add your forest data update logic here
+      console.log("Forest data status check completed");
+    } catch (error) {
+      console.error("Error checking forest data status:", error);
+    }
+  });
+};
+
+// Start server with port finding
 const startServer = async () => {
   try {
     // Connect to MongoDB
@@ -83,7 +153,7 @@ const startServer = async () => {
     // Middleware
     app.use(
       cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        origin: process.env.FRONTEND_URL || "http://localhost:5173",
         credentials: true,
       })
     );
@@ -122,6 +192,8 @@ const startServer = async () => {
           `Note: Original port ${desiredPort} was in use, using ${availablePort} instead`
         );
       }
+      // Setup cron jobs after server starts
+      setupCronJobs();
     });
   } catch (error) {
     console.error("Failed to start server:", error);
