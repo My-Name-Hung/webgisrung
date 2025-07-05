@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import express from "express";
 import jwt from "jsonwebtoken";
 import auth from "../middleware/auth.js";
@@ -114,6 +115,39 @@ router.patch("/profile", auth, async (req, res) => {
 // Verify token route
 router.get("/verify", auth, (req, res) => {
   res.json({ valid: true });
+});
+
+// Reset password route
+router.post("/reset-password", auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Get admin from database
+    const admin = await Admin.findById(req.admin.id);
+    if (!admin) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy tài khoản admin" });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    admin.password = await bcrypt.hash(newPassword, salt);
+
+    // Save updated password
+    await admin.save();
+
+    res.json({ message: "Đổi mật khẩu thành công" });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 });
 
 export default router;
