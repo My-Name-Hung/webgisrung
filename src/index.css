@@ -1,0 +1,149 @@
+:root {
+  /* Light theme */
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #60a5fa;
+  --color-primary-transparent: rgba(37, 99, 235, 0.1);
+
+  --color-background: #f8fafc;
+  --color-background-light: #ffffff;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-hover: #f1f5f9;
+
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+
+  --color-error: #dc2626;
+  --color-error-light: #fee2e2;
+
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+
+  --color-warning: #ca8a04;
+  --color-warning-light: #fef9c3;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-primary-light: #60a5fa;
+  --color-primary-transparent: rgba(59, 130, 246, 0.1);
+
+  --color-background: #0f172a;
+  --color-background-light: #1e293b;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-hover: #334155;
+
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+
+  --color-error: #ef4444;
+  --color-error-light: #450a0a;
+
+  --color-success: #22c55e;
+  --color-success-light: #052e16;
+
+  --color-warning: #eab308;
+  --color-warning-light: #422006;
+
+  /* Shadows for dark theme */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-background);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove focus outline for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Keep focus outline for keyboard users */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Better button defaults */
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* Better image defaults */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Remove list styles */
+ul,
+ol {
+  list-style: none;
+}
+
+/* Better link defaults */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Improve form element styling */
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-transparent);
+}
+
+/* Disable animations when user prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

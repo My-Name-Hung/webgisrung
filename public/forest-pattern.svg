@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="500" height="500" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="forest" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+      <!-- Tree 1 -->
+      <path d="M20 80 L35 40 L50 80 Z" fill="#2d5a27" opacity="0.2"/>
+      <path d="M25 60 L35 30 L45 60 Z" fill="#2d5a27" opacity="0.2"/>
+      <rect x="33" y="80" width="4" height="10" fill="#45321d" opacity="0.2"/>
+      
+      <!-- Tree 2 -->
+      <path d="M60 70 L75 30 L90 70 Z" fill="#1a472a" opacity="0.2"/>
+      <path d="M65 50 L75 20 L85 50 Z" fill="#1a472a" opacity="0.2"/>
+      <rect x="73" y="70" width="4" height="10" fill="#45321d" opacity="0.2"/>
+      
+      <!-- Small Tree -->
+      <path d="M10 90 L20 60 L30 90 Z" fill="#2d5a27" opacity="0.2"/>
+      <rect x="18" y="90" width="4" height="6" fill="#45321d" opacity="0.2"/>
+    </pattern>
+  </defs>
+  
+  <rect width="100%" height="100%" fill="url(#forest)"/>
+</svg> 
