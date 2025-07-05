@@ -6,11 +6,16 @@ import {
   FaLeaf,
   FaMapMarkedAlt,
   FaProjectDiagram,
+  FaQuestionCircle,
+  FaRedo,
   FaTree,
   FaUser,
 } from "react-icons/fa";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { layoutSteps } from "../../config/tourSteps";
 import { useAuth } from "../../context/AuthContext";
+import { useTourContext } from "../../context/TourContext";
+import useTour from "../../hooks/useTour";
 import UserModal from "../UserModal/UserModal";
 import styles from "./Layout.module.css";
 
@@ -20,6 +25,9 @@ const Layout = () => {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { resetTourHistory } = useTourContext();
+  const { startTour, forceTour } = useTour(layoutSteps);
 
   useEffect(() => {
     // Check system preference
@@ -49,6 +57,11 @@ const Layout = () => {
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
+  };
+
+  const handleResetTour = () => {
+    resetTourHistory();
+    forceTour();
   };
 
   const navItems = [
@@ -117,6 +130,25 @@ const Layout = () => {
         </nav>
 
         <div className={styles.sidebarFooter}>
+          <div className={styles.tourButtons}>
+            <button
+              className={styles.tourButton}
+              onClick={startTour}
+              title="Xem hướng dẫn"
+            >
+              <FaQuestionCircle />
+              {isSidebarOpen && <span>Hướng dẫn</span>}
+            </button>
+            <button
+              className={styles.tourButton}
+              onClick={handleResetTour}
+              title="Đặt lại hướng dẫn"
+            >
+              <FaRedo />
+              {isSidebarOpen && <span>Đặt lại hướng dẫn</span>}
+            </button>
+          </div>
+
           <div
             className={styles.userInfo}
             onClick={() => setIsUserModalOpen(true)}

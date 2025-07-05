@@ -285,6 +285,42 @@
   font-size: 1.1rem;
 }
 
+.tourButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tourButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(204, 255, 170, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: #ccffaa;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.tourButton:hover {
+  background: rgba(204, 255, 170, 0.2);
+  transform: translateY(-1px);
+}
+
+.tourButton svg {
+  font-size: 1.2rem;
+}
+
+.collapsed .tourButton span {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .sidebar {
     position: fixed;

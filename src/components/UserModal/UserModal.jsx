@@ -26,6 +26,7 @@ const UserModal = ({
     newPassword: "",
     confirmPassword: "",
   });
+  const [username, setUsername] = useState(admin?.username || "");
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
     newPassword: false,
@@ -45,11 +46,56 @@ const UserModal = ({
     setSuccess("");
   };
 
+  const handleUsernameChange = (e) => {
+    setUsername(e.target.value);
+    setError("");
+    setSuccess("");
+  };
+
   const togglePasswordVisibility = (field) => {
     setShowPasswords((prev) => ({
       ...prev,
       [field]: !prev[field],
     }));
+  };
+
+  const handleUpdateUsername = async (e) => {
+    e.preventDefault();
+
+    if (!username.trim()) {
+      setError("Tên đăng nhập không được để trống");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await axios.patch(
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/profile`,
+        {
+          username: username,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      setSuccess("Cập nhật tên đăng nhập thành công! Vui lòng đăng nhập lại.");
+
+      // Auto logout after 2 seconds
+      setTimeout(() => {
+        onLogout();
+      }, 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Có lỗi xảy ra");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -165,7 +211,25 @@ const UserModal = ({
                   <FaUser className={styles.infoIcon} />
                   <label>Tên đăng nhập</label>
                 </div>
-                <span>{admin?.username}</span>
+                <form
+                  onSubmit={handleUpdateUsername}
+                  className={styles.usernameForm}
+                >
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={handleUsernameChange}
+                    className={styles.usernameInput}
+                    placeholder="Nhập tên đăng nhập mới"
+                  />
+                  <button
+                    type="submit"
+                    className={styles.updateButton}
+                    disabled={isLoading || username === admin?.username}
+                  >
+                    {isLoading ? "Đang cập nhật..." : "Cập nhật"}
+                  </button>
+                </form>
               </div>
               <div className={styles.infoItem}>
                 <div className={styles.infoLabel}>
@@ -181,6 +245,8 @@ const UserModal = ({
                 </div>
                 <span>{admin?.role || "Quản trị viên"}</span>
               </div>
+              {error && <div className={styles.error}>{error}</div>}
+              {success && <div className={styles.success}>{success}</div>}
               <button
                 className={styles.logoutButton}
                 onClick={onLogout}
@@ -216,7 +282,11 @@ const UserModal = ({
                         : "Hiện mật khẩu"
                     }
                   >
-                    {showPasswords.currentPassword ? <VscEyeClosed /> : <VscEye />}
+                    {showPasswords.currentPassword ? (
+                      <VscEyeClosed />
+                    ) : (
+                      <VscEye />
+                    )}
                   </button>
                 </div>
               </div>
@@ -268,7 +338,11 @@ const UserModal = ({
                         : "Hiện mật khẩu"
                     }
                   >
-                    {showPasswords.confirmPassword ? <VscEyeClosed /> : <VscEye />}
+                    {showPasswords.confirmPassword ? (
+                      <VscEyeClosed />
+                    ) : (
+                      <VscEye />
+                    )}
                   </button>
                 </div>
               </div>

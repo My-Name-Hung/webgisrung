@@ -421,3 +421,61 @@
   color: #1a472a;
   transform: scale(1.1);
 }
+
+.usernameForm {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.usernameInput {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(45, 90, 39, 0.2);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+
+.usernameInput:focus {
+  outline: none;
+  border-color: #2d5a27;
+}
+
+.updateButton {
+  padding: 8px 16px;
+  background: #2d5a27;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.updateButton:hover:not(:disabled) {
+  background: #1a472a;
+}
+
+.updateButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #dc3545;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 6px;
+}
+
+.success {
+  color: #28a745;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(40, 167, 69, 0.1);
+  border-radius: 6px;
+}

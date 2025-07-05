@@ -6,6 +6,7 @@ import {
   Routes,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { TourProvider } from "./context/TourContext";
 
 // Components
 import Dashboard from "./components/Dashboard/Dashboard";
@@ -69,7 +70,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <TourProvider>
+          <AppRoutes />
+        </TourProvider>
       </AuthProvider>
     </Router>
   );

@@ -13,6 +13,8 @@ import {
 } from "chart.js";
 import React, { useEffect, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { dashboardSteps } from "../../config/tourSteps";
+import useTour from "../../hooks/useTour";
 import styles from "./Dashboard.module.css";
 
 // Đăng ký các thành phần ChartJS
@@ -32,10 +34,18 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { startTour } = useTour(dashboardSteps);
 
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  useEffect(() => {
+    // Start tour when data is loaded
+    if (dashboardData && !loading) {
+      startTour();
+    }
+  }, [dashboardData, loading]);
 
   const fetchDashboardData = async () => {
     try {
