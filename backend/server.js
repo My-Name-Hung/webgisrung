@@ -94,47 +94,175 @@ const setupCronJobs = () => {
       });
   });
 
-  // Daily backup at 00:00 (midnight)
+  // Daily forest data backup at 00:00 (midnight)
   cron.schedule("0 0 * * *", async () => {
     try {
-      console.log("Starting daily backup...");
-      // Add your backup logic here
-      console.log("Daily backup completed successfully");
+      console.log("Starting daily forest data backup...");
+      // Backup MongoDB collections
+      const collections = [
+        "foreststatuses",
+        "forestindices",
+        "monitoringpoints",
+        "forestplans",
+        "geojsonmaps",
+      ];
+      for (const collection of collections) {
+        try {
+          // Add timestamp to backup name
+          const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+          const backupPath = `./backups/${collection}_${timestamp}.json`;
+
+          console.log(`Backing up ${collection}...`);
+          // Add your backup logic here for each collection
+          // Example: await mongoExport(collection, backupPath);
+        } catch (error) {
+          console.error(`Error backing up ${collection}:`, error);
+        }
+      }
+      console.log("Daily forest data backup completed successfully");
     } catch (error) {
       console.error("Error during daily backup:", error);
     }
   });
 
-  // Weekly report generation every Sunday at 23:00
+  // Weekly forest report generation every Sunday at 23:00
   cron.schedule("0 23 * * 0", async () => {
     try {
-      console.log("Starting weekly report generation...");
-      // Add your report generation logic here
-      console.log("Weekly report generated successfully");
+      console.log("Starting weekly forest report generation...");
+
+      // 1. Collect forest statistics
+      const stats = {
+        totalArea: 0,
+        forestTypes: {},
+        qualityDistribution: {},
+        monitoringPointsStatus: {},
+        weeklyChanges: {},
+      };
+
+      // Add your statistics collection logic here
+      // Example:
+      // stats.totalArea = await calculateTotalForestArea();
+      // stats.forestTypes = await getForestTypeDistribution();
+      // etc...
+
+      // 2. Generate PDF report
+      // Example:
+      // await generatePDFReport(stats, `./reports/weekly_report_${new Date().toISOString()}.pdf`);
+
+      console.log("Weekly forest report generated successfully");
     } catch (error) {
       console.error("Error generating weekly report:", error);
     }
   });
 
-  // Monthly data cleanup on 1st day of each month at 02:00
+  // Monthly data cleanup and optimization on 1st day at 02:00
   cron.schedule("0 2 1 * *", async () => {
     try {
-      console.log("Starting monthly data cleanup...");
-      // Add your cleanup logic here
-      console.log("Monthly data cleanup completed successfully");
+      console.log("Starting monthly data maintenance...");
+
+      // 1. Clean up old/temporary data
+      // Example: Remove old backup files
+      // await cleanupOldBackups('./backups', 30); // Keep last 30 days
+
+      // 2. Archive old monitoring data
+      // Example: Move old monitoring points to archive
+      // await archiveOldMonitoringData(6); // Archive data older than 6 months
+
+      // 3. Optimize database
+      // Example: Compact and repair MongoDB collections
+      const collections = [
+        "foreststatuses",
+        "forestindices",
+        "monitoringpoints",
+      ];
+      for (const collection of collections) {
+        try {
+          console.log(`Optimizing ${collection} collection...`);
+          // await mongoose.connection.db.command({ compact: collection });
+        } catch (error) {
+          console.error(`Error optimizing ${collection}:`, error);
+        }
+      }
+
+      console.log("Monthly data maintenance completed successfully");
     } catch (error) {
-      console.error("Error during monthly cleanup:", error);
+      console.error("Error during monthly maintenance:", error);
     }
   });
 
-  // Check and update forest data status every 6 hours
+  // Check and update forest monitoring data every 6 hours
   cron.schedule("0 */6 * * *", async () => {
     try {
-      console.log("Checking forest data status...");
-      // Add your forest data update logic here
-      console.log("Forest data status check completed");
+      console.log("Starting forest monitoring update...");
+
+      // 1. Update monitoring points status
+      // Example: Check and update status based on last data received
+      // await updateMonitoringPointsStatus();
+
+      // 2. Check for critical conditions
+      // Example: Check for fire risks, illegal activities, etc.
+      // const alerts = await checkForestAlerts();
+      // if (alerts.length > 0) {
+      //   await sendAlertNotifications(alerts);
+      // }
+
+      // 3. Update forest health indices
+      // Example: Calculate and update forest health metrics
+      // await updateForestHealthIndices();
+
+      // 4. Generate monitoring summary
+      const summary = {
+        timestamp: new Date(),
+        activePoints: 0,
+        alerts: [],
+        healthStatus: {},
+      };
+
+      // Add your monitoring summary logic here
+      // Example:
+      // summary.activePoints = await countActiveMonitoringPoints();
+      // summary.alerts = await getRecentAlerts();
+      // summary.healthStatus = await getForestHealthStatus();
+
+      console.log("Forest monitoring update completed", summary);
     } catch (error) {
-      console.error("Error checking forest data status:", error);
+      console.error("Error during forest monitoring update:", error);
+    }
+  });
+
+  // Daily data validation at 01:00
+  cron.schedule("0 1 * * *", async () => {
+    try {
+      console.log("Starting daily data validation...");
+
+      // 1. Validate forest area data
+      // Example: Check for inconsistencies in area calculations
+      // const areaValidation = await validateForestAreas();
+
+      // 2. Validate monitoring points data
+      // Example: Check for missing or invalid readings
+      // const monitoringValidation = await validateMonitoringData();
+
+      // 3. Validate GeoJSON data
+      // Example: Check for invalid coordinates or properties
+      // const geojsonValidation = await validateGeoJSONData();
+
+      // 4. Generate validation report
+      const validationReport = {
+        timestamp: new Date(),
+        errors: [],
+        warnings: [],
+        fixes: [],
+      };
+
+      // Add your validation logic here
+      // Example:
+      // if (areaValidation.errors.length > 0) validationReport.errors.push(...areaValidation.errors);
+      // if (monitoringValidation.warnings.length > 0) validationReport.warnings.push(...monitoringValidation.warnings);
+
+      console.log("Daily data validation completed", validationReport);
+    } catch (error) {
+      console.error("Error during data validation:", error);
     }
   });
 };
