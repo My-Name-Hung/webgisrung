@@ -13,18 +13,22 @@ router.post("/login", async (req, res) => {
     // Find admin by username
     const admin = await Admin.findOne({ username });
     if (!admin) {
+      console.log("Login failed: Admin not found -", username);
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Tên đăng nhập hoặc mật khẩu không đúng",
       });
     }
 
     // Check password
     const isMatch = await admin.comparePassword(password);
+    console.log("Password match result:", isMatch, "for user:", username);
+
     if (!isMatch) {
+      console.log("Login failed: Invalid password for user -", username);
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Tên đăng nhập hoặc mật khẩu không đúng",
       });
     }
 
@@ -37,6 +41,7 @@ router.post("/login", async (req, res) => {
     admin.lastLogin = new Date();
     await admin.save();
 
+    console.log("Login successful for user:", username);
     res.json({
       success: true,
       token,
@@ -47,9 +52,10 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("Login error:", error);
     res.status(500).json({
       success: false,
-      message: "Error during login",
+      message: "Lỗi trong quá trình đăng nhập",
       error: error.message,
     });
   }
@@ -76,7 +82,7 @@ router.get("/profile", auth, async (req, res) => {
 router.patch("/profile", auth, async (req, res) => {
   try {
     const updates = Object.keys(req.body);
-    const allowedUpdates = ["email", "password"];
+    const allowedUpdates = ["email", "password", "username"];
     const isValidOperation = updates.every((update) =>
       allowedUpdates.includes(update)
     );
@@ -86,6 +92,21 @@ router.patch("/profile", auth, async (req, res) => {
         success: false,
         message: "Invalid updates",
       });
+    }
+
+    // Check if username is being updated and if it already exists
+    if (req.body.username) {
+      const existingAdmin = await Admin.findOne({
+        username: req.body.username,
+        _id: { $ne: req.admin._id }, // Exclude current admin
+      });
+
+      if (existingAdmin) {
+        return res.status(400).json({
+          success: false,
+          message: "Tên đăng nhập đã tồn tại",
+        });
+      }
     }
 
     updates.forEach((update) => {
@@ -124,6 +145,7 @@ router.post("/reset-password", auth, async (req, res) => {
     // Get admin from database
     const admin = await Admin.findById(req.admin.id);
     if (!admin) {
+      console.log("Reset password failed: Admin not found -", req.admin.id);
       return res
         .status(404)
         .json({ message: "Không tìm thấy tài khoản admin" });
@@ -131,7 +153,18 @@ router.post("/reset-password", auth, async (req, res) => {
 
     // Verify current password using model method
     const isMatch = await admin.comparePassword(currentPassword);
+    console.log(
+      "Current password match result:",
+      isMatch,
+      "for user:",
+      admin.username
+    );
+
     if (!isMatch) {
+      console.log(
+        "Reset password failed: Invalid current password for user -",
+        admin.username
+      );
       return res.status(400).json({ message: "Mật khẩu hiện tại không đúng" });
     }
 
@@ -140,6 +173,7 @@ router.post("/reset-password", auth, async (req, res) => {
 
     // Save updated password
     await admin.save();
+    console.log("Password reset successful for user:", admin.username);
 
     res.json({ message: "Đổi mật khẩu thành công" });
   } catch (err) {
