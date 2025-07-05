@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import { CiEdit } from "react-icons/ci";
 import {
   FaEnvelope,
   FaMoon,
@@ -27,6 +28,7 @@ const UserModal = ({
     confirmPassword: "",
   });
   const [username, setUsername] = useState(admin?.username || "");
+  const [email, setEmail] = useState(admin?.email || "");
   const [showPasswords, setShowPasswords] = useState({
     currentPassword: false,
     newPassword: false,
@@ -35,6 +37,7 @@ const UserModal = ({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [editingField, setEditingField] = useState(null);
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
@@ -46,8 +49,12 @@ const UserModal = ({
     setSuccess("");
   };
 
-  const handleUsernameChange = (e) => {
-    setUsername(e.target.value);
+  const handleFieldChange = (e, field) => {
+    if (field === "username") {
+      setUsername(e.target.value);
+    } else if (field === "email") {
+      setEmail(e.target.value);
+    }
     setError("");
     setSuccess("");
   };
@@ -59,11 +66,16 @@ const UserModal = ({
     }));
   };
 
-  const handleUpdateUsername = async (e) => {
-    e.preventDefault();
+  const handleUpdateField = async (field) => {
+    if (!field) return;
 
-    if (!username.trim()) {
-      setError("Tên đăng nhập không được để trống");
+    const value = field === "username" ? username : email;
+    if (!value.trim()) {
+      setError(
+        `${
+          field === "username" ? "Tên đăng nhập" : "Email"
+        } không được để trống`
+      );
       return;
     }
 
@@ -75,7 +87,7 @@ const UserModal = ({
       const response = await axios.patch(
         `${import.meta.env.VITE_SERVER_URL}/api/auth/profile`,
         {
-          username: username,
+          [field]: value,
         },
         {
           headers: {
@@ -85,12 +97,18 @@ const UserModal = ({
         }
       );
 
-      setSuccess("Cập nhật tên đăng nhập thành công! Vui lòng đăng nhập lại.");
-
-      // Auto logout after 2 seconds
-      setTimeout(() => {
-        onLogout();
-      }, 2000);
+      setSuccess(
+        `Cập nhật ${
+          field === "username" ? "tên đăng nhập" : "email"
+        } thành công!`
+      );
+      if (field === "username") {
+        // Auto logout after 2 seconds for username change
+        setTimeout(() => {
+          onLogout();
+        }, 2000);
+      }
+      setEditingField(null);
     } catch (err) {
       setError(err.response?.data?.message || "Có lỗi xảy ra");
     } finally {
@@ -146,6 +164,58 @@ const UserModal = ({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderEditableField = (field, value, label, icon) => {
+    const isEditing = editingField === field;
+
+    return (
+      <div className={styles.infoItem}>
+        <div className={styles.infoLabel}>
+          {icon}
+          <label>{label}</label>
+        </div>
+        <div className={styles.infoValue}>
+          {isEditing ? (
+            <div className={styles.editForm}>
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => handleFieldChange(e, field)}
+                className={styles.editInput}
+                placeholder={`Nhập ${label.toLowerCase()}`}
+              />
+              <div className={styles.editActions}>
+                <button
+                  onClick={() => handleUpdateField(field)}
+                  className={styles.saveButton}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Đang lưu..." : "Lưu"}
+                </button>
+                <button
+                  onClick={() => setEditingField(null)}
+                  className={styles.cancelButton}
+                >
+                  Hủy
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.valueWithEdit}>
+              <span>{value}</span>
+              <button
+                className={styles.editButton}
+                onClick={() => setEditingField(field)}
+                title={`Chỉnh sửa ${label.toLowerCase()}`}
+              >
+                <CiEdit />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   if (!isOpen) return null;
@@ -206,38 +276,18 @@ const UserModal = ({
         <div className={styles.tabContent}>
           {activeTab === "info" ? (
             <div className={styles.userInfo}>
-              <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>
-                  <FaUser className={styles.infoIcon} />
-                  <label>Tên đăng nhập</label>
-                </div>
-                <form
-                  onSubmit={handleUpdateUsername}
-                  className={styles.usernameForm}
-                >
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={handleUsernameChange}
-                    className={styles.usernameInput}
-                    placeholder="Nhập tên đăng nhập mới"
-                  />
-                  <button
-                    type="submit"
-                    className={styles.updateButton}
-                    disabled={isLoading || username === admin?.username}
-                  >
-                    {isLoading ? "Đang cập nhật..." : "Cập nhật"}
-                  </button>
-                </form>
-              </div>
-              <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>
-                  <FaEnvelope className={styles.infoIcon} />
-                  <label>Email</label>
-                </div>
-                <span>{admin?.email}</span>
-              </div>
+              {renderEditableField(
+                "username",
+                username,
+                "Tên đăng nhập",
+                <FaUser className={styles.infoIcon} />
+              )}
+              {renderEditableField(
+                "email",
+                email,
+                "Email",
+                <FaEnvelope className={styles.infoIcon} />
+              )}
               <div className={styles.infoItem}>
                 <div className={styles.infoLabel}>
                   <FaUserShield className={styles.infoIcon} />
