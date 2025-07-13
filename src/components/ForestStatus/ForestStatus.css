@@ -52,7 +52,6 @@
   box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
   border: 1px solid rgba(45, 90, 39, 0.1);
   backdrop-filter: blur(10px);
-  height: calc(100vh - 160px);
   overflow-y: auto;
 }
 
@@ -235,11 +234,33 @@
   border-radius: var(--border-radius-md);
   overflow: hidden;
   position: relative;
-  background-color: rgba(255, 255, 255, 0.5);
   border: 2px solid rgba(45, 90, 39, 0.2);
   box-shadow: 0 4px 12px rgba(45, 90, 39, 0.1);
   margin-bottom: var(--spacing-lg);
   height: 400px;
+}
+
+.file-input-foreststatus {
+  padding: var(--spacing-lg);
+  border: 2px dashed rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-md);
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.file-input-foreststatus:hover {
+  border-color: #2d5a27;
+  background-color: rgba(204, 255, 170, 0.1);
+}
+
+.file-preview-foreststatus {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(45, 90, 39, 0.1);
 }
 
 .map-controls-foreststatus {
@@ -279,21 +300,6 @@
   width: 16px;
   height: 16px;
   color: #2d5a27;
-}
-
-.file-input-foreststatus {
-  padding: var(--spacing-lg);
-  border: 2px dashed rgba(45, 90, 39, 0.2);
-  border-radius: var(--border-radius-md);
-  background-color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.2s ease;
-}
-
-.file-input-foreststatus:hover {
-  border-color: #2d5a27;
-  background-color: rgba(204, 255, 170, 0.1);
 }
 
 /* Responsive styles */

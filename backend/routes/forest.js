@@ -25,17 +25,20 @@ router.post("/status", auth, async (req, res) => {
     await status.save();
     res.status(201).json(status);
   } catch (error) {
-    console.error("Error creating forest status:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error adding forest status:", error);
+    res.status(500).json({ message: "Không thể thêm hiện trạng rừng" });
   }
 });
 
 router.get("/status", async (req, res) => {
   try {
-    const forestStatus = await ForestStatus.find().sort("-createdAt");
-    res.json(forestStatus);
+    const statuses = await ForestStatus.find();
+    res.json(statuses);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error getting forest statuses:", error);
+    res
+      .status(500)
+      .json({ message: "Không thể lấy danh sách hiện trạng rừng" });
   }
 });
 
@@ -87,17 +90,18 @@ router.post("/planning", auth, async (req, res) => {
     await planning.save();
     res.status(201).json(planning);
   } catch (error) {
-    console.error("Error creating forest planning:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error adding forest planning:", error);
+    res.status(500).json({ message: "Không thể thêm quy hoạch rừng" });
   }
 });
 
 router.get("/planning", async (req, res) => {
   try {
-    const forestPlanning = await ForestPlanning.find().sort("-createdAt");
-    res.json(forestPlanning);
+    const plannings = await ForestPlanning.find();
+    res.json(plannings);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error getting forest plannings:", error);
+    res.status(500).json({ message: "Không thể lấy danh sách quy hoạch rừng" });
   }
 });
 

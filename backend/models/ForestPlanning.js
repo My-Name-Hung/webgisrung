@@ -1,52 +1,59 @@
 const mongoose = require("mongoose");
 
-const forestPlanningSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+const forestPlanningSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    area: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: ["Trồng rừng", "Bảo tồn", "Phát triển", "Phục hồi"],
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["planned", "in-progress", "completed", "cancelled"],
+      default: "planned",
+    },
+    startDate: {
+      type: Date,
+      required: true,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    geojson: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
   },
-  area: {
-    type: Number,
-    required: true,
-  },
-  type: {
-    type: String,
-    required: true,
-  },
-  status: {
-    type: String,
-    enum: ["planned", "in-progress", "completed", "cancelled"],
-    default: "planned",
-  },
-  startDate: {
-    type: Date,
-    required: true,
-  },
-  endDate: {
-    type: Date,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  geojson: {
-    type: mongoose.Schema.Types.Mixed,
-    required: false,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
+// Validate that endDate is after startDate
 forestPlanningSchema.pre("save", function (next) {
-  this.updatedAt = Date.now();
+  if (this.endDate <= this.startDate) {
+    next(new Error("Ngày kết thúc phải sau ngày bắt đầu"));
+  }
   next();
 });
 
-module.exports = mongoose.model("ForestPlanning", forestPlanningSchema);
+const ForestPlanning = mongoose.model("ForestPlanning", forestPlanningSchema);
+
+module.exports = ForestPlanning;

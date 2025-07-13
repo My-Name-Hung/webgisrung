@@ -22,6 +22,7 @@ const ForestStatus = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
   const { startTour } = useCustomTour(forestStatusSteps);
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
@@ -58,6 +59,7 @@ const ForestStatus = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    setSelectedFile(file);
     setError("");
 
     try {
@@ -96,29 +98,36 @@ const ForestStatus = () => {
       previewLayer.current = L.geoJSON(geoJsonData).addTo(leafletMap.current);
       leafletMap.current.fitBounds(previewLayer.current.getBounds());
 
-      // Update form data
       setFormData((prev) => ({
         ...prev,
         geojson: geoJsonData,
       }));
-
-      // Update preview if all required fields are filled
-      if (Object.values(formData).every((v) => v !== "")) {
-        setPreviewData({
-          ...formData,
-          geojson: geoJsonData,
-        });
-      }
     } catch (err) {
       setError("Không thể đọc file. Vui lòng kiểm tra định dạng file.");
+      setSelectedFile(null);
+      setFormData((prev) => ({
+        ...prev,
+        geojson: null,
+      }));
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let newValue = value;
+
+    // Handle area input with number formatting
+    if (name === "area") {
+      // Remove existing commas and convert to number
+      const numValue = parseFloat(value.replace(/,/g, ""));
+      if (!isNaN(numValue)) {
+        newValue = numValue;
+      }
+    }
+
     const newFormData = {
       ...formData,
-      [name]: name === "area" ? parseFloat(value) : value,
+      [name]: newValue,
     };
     setFormData(newFormData);
 
@@ -140,10 +149,10 @@ const ForestStatus = () => {
     setSuccess("");
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/forest/status`,
-        previewData
-      );
+      await axios.post(`${import.meta.env.VITE_SERVER_URL}/api/forest/status`, {
+        ...previewData,
+        area: parseFloat(previewData.area.toString().replace(/,/g, "")),
+      });
       setSuccess("Thêm hiện trạng rừng thành công");
       setFormData({
         type: "",
@@ -153,8 +162,8 @@ const ForestStatus = () => {
         geojson: null,
       });
       setPreviewData(null);
+      setSelectedFile(null);
 
-      // Clear map
       if (previewLayer.current) {
         leafletMap.current.removeLayer(previewLayer.current);
         previewLayer.current = null;
@@ -166,9 +175,10 @@ const ForestStatus = () => {
     }
   };
 
-  const formatArea = (value) => {
-    if (!value) return "";
-    return new Intl.NumberFormat("vi-VN").format(value);
+  // Format number with commas
+  const formatNumber = (num) => {
+    if (!num) return "";
+    return new Intl.NumberFormat("vi-VN").format(num);
   };
 
   // Prepare preview chart data
@@ -178,7 +188,7 @@ const ForestStatus = () => {
         datasets: [
           {
             label: "Diện tích (ha)",
-            data: [previewData.area],
+            data: [parseFloat(previewData.area.toString().replace(/,/g, ""))],
             backgroundColor: ["rgba(44, 122, 123, 0.8)"],
           },
         ],
@@ -226,14 +236,13 @@ const ForestStatus = () => {
           <div className="form-group-foreststatus">
             <label htmlFor="area">Diện tích (ha)</label>
             <input
-              type="number"
+              type="text"
               id="area"
               name="area"
-              value={formData.area}
+              value={formatNumber(formData.area)}
               onChange={handleInputChange}
               className="input-foreststatus"
-              step="0.01"
-              min="0"
+              placeholder="Nhập diện tích"
               required
             />
           </div>
@@ -291,6 +300,14 @@ const ForestStatus = () => {
                 </div>
               </label>
             </div>
+            {selectedFile && (
+              <div className="file-preview-foreststatus">
+                <div>File đã chọn: {selectedFile.name}</div>
+                <div>
+                  Kích thước: {(selectedFile.size / 1024).toFixed(2)} KB
+                </div>
+              </div>
+            )}
           </div>
 
           <button
@@ -327,6 +344,7 @@ const ForestStatus = () => {
                 if (previewLayer.current) {
                   leafletMap.current.removeLayer(previewLayer.current);
                   previewLayer.current = null;
+                  setSelectedFile(null);
                   setFormData((prev) => ({
                     ...prev,
                     geojson: null,
@@ -340,12 +358,12 @@ const ForestStatus = () => {
           </div>
         </div>
 
-        {previewData ? (
+        {previewData && (
           <>
             <div className="preview-card-foreststatus">
               <h3>{previewData.type}</h3>
               <p className="preview-area-foreststatus">
-                {formatArea(previewData.area)} ha
+                {formatNumber(previewData.area)} ha
               </p>
 
               <div className="preview-details-foreststatus">
@@ -395,10 +413,6 @@ const ForestStatus = () => {
               />
             </div>
           </>
-        ) : (
-          <div className="no-data-foreststatus">
-            Nhập thông tin để xem trước hiện trạng
-          </div>
         )}
       </div>
     </div>
