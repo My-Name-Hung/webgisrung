@@ -1,4 +1,3 @@
-import { useTour } from "@reactour/tour";
 import { useEffect, useState } from "react";
 import {
   FaBars,
@@ -21,7 +20,6 @@ import {
   forestStatusSteps,
   layoutSteps,
   monitoringSteps,
-  userModalSteps,
 } from "../../config/tourSteps";
 import { useAuth } from "../../context/AuthContext";
 import { useTourContext } from "../../context/TourContext";
@@ -38,8 +36,7 @@ const Layout = () => {
   const { admin, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { resetTourHistory } = useTourContext();
-  const { setSteps, setIsOpen } = useTour();
+  const { startTour, resetTourHistory } = useTourContext();
 
   // Function to get tour steps based on current route
   const getTourSteps = () => {
@@ -70,21 +67,6 @@ const Layout = () => {
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
   }, [isDarkMode]);
 
-  useEffect(() => {
-    // Update tour steps when route changes
-    if (!isUserModalOpen) {
-      setSteps(getTourSteps());
-    }
-  }, [location.pathname, isUserModalOpen, setSteps]);
-
-  useEffect(() => {
-    // Start user modal tour when modal is opened
-    if (isUserModalOpen) {
-      setSteps(userModalSteps);
-      setIsOpen(true);
-    }
-  }, [isUserModalOpen, setSteps, setIsOpen]);
-
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -99,14 +81,12 @@ const Layout = () => {
   };
 
   const handleStartTour = () => {
-    setSteps(getTourSteps());
-    setIsOpen(true);
+    startTour(getTourSteps());
   };
 
   const handleResetTour = () => {
     resetTourHistory();
-    setSteps(getTourSteps());
-    setIsOpen(true);
+    startTour(getTourSteps());
   };
 
   const handleOpenUserModal = () => {
@@ -115,8 +95,7 @@ const Layout = () => {
 
   const handleCloseUserModal = () => {
     setIsUserModalOpen(false);
-    setSteps(getTourSteps()); // Reset to current route's steps
-    setIsOpen(false);
+    startTour(getTourSteps()); // Reset to current route's steps
   };
 
   const navItems = [

@@ -1,7 +1,7 @@
 .monitoringpoints-container {
   padding: var(--spacing-lg);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 400px 1fr;
   gap: var(--spacing-xl);
   min-height: calc(100vh - 80px);
 }
@@ -113,6 +113,44 @@
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-lg);
+  position: relative;
+}
+
+.coordinates-hint {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #2d5a27;
+  font-size: 0.9em;
+  opacity: 0.8;
+  font-style: italic;
+}
+
+.map-marker-popup {
+  padding: 8px 12px;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 0.9em;
+  color: #2d5a27;
+}
+
+.map-marker-popup button {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: #2d5a27;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  width: 100%;
+}
+
+.map-marker-popup button:hover {
+  background: #1a472a;
 }
 
 .submit-button-monitoringpoints {
@@ -142,7 +180,8 @@
   overflow: hidden;
   position: relative;
   background-color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(45, 90, 39, 0.1);
+  border: 2px solid rgba(45, 90, 39, 0.2);
+  box-shadow: 0 4px 12px rgba(45, 90, 39, 0.1);
   margin-bottom: var(--spacing-lg);
 }
 
@@ -229,21 +268,13 @@
   }
 
   .preview-map-monitoringpoints {
-    height: 400px;
+    height: 600px;
   }
 }
 
 @media (max-width: 768px) {
-  .coordinates-monitoringpoints {
-    grid-template-columns: 1fr;
-  }
-
-  .preview-details-monitoringpoints {
-    grid-template-columns: 1fr;
-  }
-
   .preview-map-monitoringpoints {
-    height: 300px;
+    height: 500px;
   }
 }
 
@@ -258,6 +289,6 @@
   }
 
   .preview-map-monitoringpoints {
-    height: 250px;
+    height: 400px;
   }
 }

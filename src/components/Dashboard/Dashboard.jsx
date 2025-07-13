@@ -1,35 +1,10 @@
-import { useTour } from "@reactour/tour";
 import axios from "axios";
-import {
-  ArcElement,
-  BarElement,
-  CategoryScale,
-  Chart as ChartJS,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-} from "chart.js";
 import React, { useEffect, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import { FaChartBar, FaChartLine, FaChartPie } from "react-icons/fa";
 import { dashboardSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import "./Dashboard.css";
-
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 const EmptyChart = ({ icon: Icon, message }) => (
   <div className="empty-chart-dashboard">
@@ -42,7 +17,7 @@ const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { setSteps, setIsOpen } = useTour();
+  const { startTour } = useCustomTour(dashboardSteps);
 
   useEffect(() => {
     fetchDashboardData();
@@ -51,10 +26,9 @@ const Dashboard = () => {
   useEffect(() => {
     // Start tour when data is loaded
     if (dashboardData && !loading) {
-      setSteps(dashboardSteps);
-      setIsOpen(true);
+      startTour();
     }
-  }, [dashboardData, loading, setSteps, setIsOpen]);
+  }, [dashboardData, loading, startTour]);
 
   const fetchDashboardData = async () => {
     try {

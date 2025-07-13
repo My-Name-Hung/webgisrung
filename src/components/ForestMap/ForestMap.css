@@ -1,7 +1,7 @@
 .forestmap-container {
   padding: var(--spacing-lg);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 400px 1fr;
   gap: var(--spacing-xl);
   min-height: calc(100vh - 80px);
   overflow: hidden;
@@ -62,6 +62,8 @@
   border-radius: var(--border-radius-md);
   overflow: hidden;
   position: relative;
+  border: 2px solid rgba(45, 90, 39, 0.2);
+  box-shadow: 0 4px 12px rgba(45, 90, 39, 0.1);
 }
 
 .upload-form-forestmap {
@@ -164,6 +166,10 @@
   z-index: 1000;
   display: flex;
   gap: var(--spacing-sm);
+  background: white;
+  padding: 4px;
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .map-control-button {
@@ -173,11 +179,23 @@
   padding: var(--spacing-sm);
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
 }
 
 .map-control-button:hover {
   background: #f0f9ff;
   border-color: #2d5a27;
+  transform: translateY(-1px);
+}
+
+.map-control-button svg {
+  width: 16px;
+  height: 16px;
+  color: #2d5a27;
 }
 
 .map-list-forestmap {
@@ -246,13 +264,13 @@
   }
 
   .preview-section-forestmap {
-    height: 500px;
+    height: 600px;
   }
 }
 
 @media (max-width: 768px) {
   .preview-section-forestmap {
-    height: 400px;
+    height: 500px;
   }
 }
 
@@ -262,6 +280,6 @@
   }
 
   .preview-section-forestmap {
-    height: 300px;
+    height: 400px;
   }
 }

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CiEdit } from "react-icons/ci";
 import {
   FaEnvelope,
@@ -11,6 +11,8 @@ import {
   FaUserShield,
 } from "react-icons/fa";
 import { VscEye, VscEyeClosed } from "react-icons/vsc";
+import { userModalSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import "./UserModal.css";
 
 const UserModal = ({
@@ -38,6 +40,13 @@ const UserModal = ({
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [editingField, setEditingField] = useState(null);
+  const { startTour } = useCustomTour(userModalSteps);
+
+  useEffect(() => {
+    if (isOpen) {
+      startTour();
+    }
+  }, [isOpen, startTour]);
 
   if (!isOpen) return null;
 

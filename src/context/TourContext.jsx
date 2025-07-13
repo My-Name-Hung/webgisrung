@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-const TourContext = createContext(null);
+const TourContext = createContext();
 
 export const useTourContext = () => {
   const context = useContext(TourContext);
@@ -13,42 +13,43 @@ export const useTourContext = () => {
 export const TourProvider = ({ children }) => {
   const [visitedPages, setVisitedPages] = useState(() => {
     try {
-      const saved = localStorage.getItem("visitedPages");
+      const saved = localStorage.getItem("tourVisitedPages");
       return saved ? JSON.parse(saved) : {};
-    } catch (error) {
-      console.error("Error loading visited pages:", error);
+    } catch {
       return {};
     }
   });
 
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [currentTourSteps, setCurrentTourSteps] = useState([]);
+
   useEffect(() => {
-    try {
-      localStorage.setItem("visitedPages", JSON.stringify(visitedPages));
-    } catch (error) {
-      console.error("Error saving visited pages:", error);
-    }
+    localStorage.setItem("tourVisitedPages", JSON.stringify(visitedPages));
   }, [visitedPages]);
 
   const markPageAsVisited = (pagePath) => {
-    if (!visitedPages[pagePath]) {
-      setVisitedPages((prev) => ({
-        ...prev,
-        [pagePath]: true,
-      }));
-    }
+    setVisitedPages((prev) => ({
+      ...prev,
+      [pagePath]: true,
+    }));
   };
 
   const hasVisitedPage = (pagePath) => {
-    return !!visitedPages[pagePath];
+    return visitedPages[pagePath] || false;
   };
 
   const resetTourHistory = () => {
     setVisitedPages({});
-    try {
-      localStorage.removeItem("visitedPages");
-    } catch (error) {
-      console.error("Error resetting tour history:", error);
-    }
+    localStorage.removeItem("tourVisitedPages");
+  };
+
+  const startTour = (steps) => {
+    setCurrentTourSteps(steps);
+    setIsTourOpen(true);
+  };
+
+  const closeTour = () => {
+    setIsTourOpen(false);
   };
 
   const value = {
@@ -56,6 +57,10 @@ export const TourProvider = ({ children }) => {
     markPageAsVisited,
     hasVisitedPage,
     resetTourHistory,
+    isTourOpen,
+    startTour,
+    closeTour,
+    currentTourSteps,
   };
 
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>;

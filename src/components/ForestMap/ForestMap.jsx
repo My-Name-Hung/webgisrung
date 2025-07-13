@@ -1,4 +1,3 @@
-import { useTour } from "@reactour/tour";
 import * as turf from "@turf/turf";
 import axios from "axios";
 import L from "leaflet";
@@ -7,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { FaFileUpload, FaMapMarkedAlt, FaTrash } from "react-icons/fa";
 import shp from "shpjs";
 import { forestMapSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import "./ForestMap.css";
 
 const ForestMap = () => {
@@ -20,7 +20,7 @@ const ForestMap = () => {
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const previewLayer = useRef(null);
-  const { setSteps, setIsOpen } = useTour();
+  const { startTour } = useCustomTour(forestMapSteps);
 
   useEffect(() => {
     // Initialize Leaflet map
@@ -45,10 +45,9 @@ const ForestMap = () => {
   useEffect(() => {
     // Start tour when preview data is loaded
     if (previewData) {
-      setSteps(forestMapSteps);
-      setIsOpen(true);
+      startTour();
     }
-  }, [previewData, setSteps, setIsOpen]);
+  }, [previewData, startTour]);
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];

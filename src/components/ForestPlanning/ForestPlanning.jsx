@@ -1,5 +1,10 @@
+import * as turf from "@turf/turf";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import React, { useEffect, useRef, useState } from "react";
+import { FaFileUpload, FaMapMarkedAlt, FaTrash } from "react-icons/fa";
+import shp from "shpjs";
 import { forestPlanningSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import "./ForestPlanning.css";
@@ -13,12 +18,36 @@ const ForestPlanning = () => {
     startDate: "",
     endDate: "",
     description: "",
+    geojson: null,
   });
   const [previewData, setPreviewData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { startTour } = useCustomTour(forestPlanningSteps);
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+  const previewLayer = useRef(null);
+
+  useEffect(() => {
+    // Initialize Leaflet map
+    if (!leafletMap.current && mapRef.current) {
+      leafletMap.current = L.map(mapRef.current).setView(
+        [20.865139, 106.68383],
+        11
+      );
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(leafletMap.current);
+    }
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Start tour when preview data is loaded
@@ -26,6 +55,66 @@ const ForestPlanning = () => {
       startTour();
     }
   }, [previewData, startTour]);
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setError("");
+
+    try {
+      let geoJsonData;
+
+      if (file.name.endsWith(".geojson")) {
+        const text = await file.text();
+        geoJsonData = JSON.parse(text);
+      } else if (file.name.endsWith(".csv")) {
+        const text = await file.text();
+        const rows = text.split("\n").map((row) => row.split(","));
+        const headers = rows[0];
+        const features = rows
+          .slice(1)
+          .map((row) => {
+            const lat = parseFloat(row[headers.indexOf("latitude")]);
+            const lng = parseFloat(row[headers.indexOf("longitude")]);
+            if (isNaN(lat) || isNaN(lng)) return null;
+
+            return turf.point([lng, lat]);
+          })
+          .filter((f) => f !== null);
+
+        geoJsonData = turf.featureCollection(features);
+      } else if (file.name.endsWith(".zip")) {
+        const arrayBuffer = await file.arrayBuffer();
+        geoJsonData = await shp(arrayBuffer);
+      } else {
+        throw new Error("Unsupported file format");
+      }
+
+      // Update preview on map
+      if (previewLayer.current) {
+        leafletMap.current.removeLayer(previewLayer.current);
+      }
+      previewLayer.current = L.geoJSON(geoJsonData).addTo(leafletMap.current);
+      leafletMap.current.fitBounds(previewLayer.current.getBounds());
+
+      // Update form data
+      setFormData((prev) => ({
+        ...prev,
+        geojson: geoJsonData,
+      }));
+
+      // Update preview if all required fields are filled
+      if (Object.values(formData).every((v) => v !== "")) {
+        setPreviewData({
+          ...formData,
+          geojson: geoJsonData,
+        });
+      }
+    } catch (err) {
+      setError("Không thể đọc file. Vui lòng kiểm tra định dạng file.");
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -63,13 +152,25 @@ const ForestPlanning = () => {
         startDate: "",
         endDate: "",
         description: "",
+        geojson: null,
       });
       setPreviewData(null);
+
+      // Clear map
+      if (previewLayer.current) {
+        leafletMap.current.removeLayer(previewLayer.current);
+        previewLayer.current = null;
+      }
     } catch (err) {
       setError("Không thể thêm quy hoạch");
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatArea = (value) => {
+    if (!value) return "";
+    return new Intl.NumberFormat("vi-VN").format(value);
   };
 
   return (
@@ -170,6 +271,31 @@ const ForestPlanning = () => {
             />
           </div>
 
+          <div className="form-group-forestplanning">
+            <label>File bản đồ</label>
+            <div className="file-input-forestplanning">
+              <input
+                type="file"
+                accept=".geojson,.csv,.zip"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
+                id="fileInput"
+              />
+              <label
+                htmlFor="fileInput"
+                style={{ cursor: "pointer", display: "block" }}
+              >
+                <FaFileUpload
+                  style={{ fontSize: "2rem", marginBottom: "0.5rem" }}
+                />
+                <div>Kéo thả file hoặc click để chọn</div>
+                <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                  (Hỗ trợ: GeoJSON, CSV, Shapefile)
+                </div>
+              </label>
+            </div>
+          </div>
+
           <button
             type="submit"
             className="submit-button-forestplanning"
@@ -183,11 +309,45 @@ const ForestPlanning = () => {
       <div className="preview-section-forestplanning">
         <h2>Xem trước quy hoạch</h2>
 
+        <div className="preview-map-forestplanning" ref={mapRef}>
+          <div className="map-controls-forestplanning">
+            <button
+              className="map-control-button"
+              onClick={() => {
+                if (previewLayer.current) {
+                  leafletMap.current.fitBounds(
+                    previewLayer.current.getBounds()
+                  );
+                }
+              }}
+              title="Căn chỉnh"
+            >
+              <FaMapMarkedAlt />
+            </button>
+            <button
+              className="map-control-button"
+              onClick={() => {
+                if (previewLayer.current) {
+                  leafletMap.current.removeLayer(previewLayer.current);
+                  previewLayer.current = null;
+                  setFormData((prev) => ({
+                    ...prev,
+                    geojson: null,
+                  }));
+                }
+              }}
+              title="Xóa dữ liệu"
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
+
         {previewData ? (
           <div className="preview-card-forestplanning">
             <h3>{previewData.name}</h3>
             <p className="preview-area-forestplanning">
-              {previewData.area.toLocaleString()} ha
+              {formatArea(previewData.area)} ha
             </p>
 
             <div className="preview-details-forestplanning">

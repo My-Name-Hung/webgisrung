@@ -1,9 +1,9 @@
-import { useTour } from "@reactour/tour";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import React, { useEffect, useRef, useState } from "react";
 import { monitoringSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import "./MonitoringPoints.css";
 
 const MonitoringPoints = () => {
@@ -23,7 +23,8 @@ const MonitoringPoints = () => {
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const markerRef = useRef(null);
-  const { setSteps, setIsOpen } = useTour();
+  const popupRef = useRef(null);
+  const { startTour } = useCustomTour(monitoringSteps);
 
   useEffect(() => {
     // Initialize Leaflet map
@@ -37,15 +38,12 @@ const MonitoringPoints = () => {
       }).addTo(leafletMap.current);
 
       // Add click handler to update coordinates
-      leafletMap.current.on("click", (e) => {
-        const { lat, lng } = e.latlng;
-        handleCoordinateChange("longitude", lng);
-        handleCoordinateChange("latitude", lat);
-      });
+      leafletMap.current.on("click", handleMapClick);
     }
 
     return () => {
       if (leafletMap.current) {
+        leafletMap.current.off("click", handleMapClick);
         leafletMap.current.remove();
         leafletMap.current = null;
       }
@@ -55,10 +53,49 @@ const MonitoringPoints = () => {
   useEffect(() => {
     // Start tour when preview data is loaded
     if (previewData) {
-      setSteps(monitoringSteps);
-      setIsOpen(true);
+      startTour();
     }
-  }, [previewData, setSteps, setIsOpen]);
+  }, [previewData, startTour]);
+
+  const handleMapClick = (e) => {
+    const { lat, lng } = e.latlng;
+
+    // Update marker
+    if (markerRef.current) {
+      markerRef.current.remove();
+    }
+
+    // Create marker with popup
+    markerRef.current = L.marker([lat, lng]).addTo(leafletMap.current);
+
+    // Create popup content
+    const popupContent = document.createElement("div");
+    popupContent.className = "map-marker-popup";
+    popupContent.innerHTML = `
+      <div>Vĩ độ: ${lat.toFixed(6)}</div>
+      <div>Kinh độ: ${lng.toFixed(6)}</div>
+      <button>Sử dụng tọa độ này</button>
+    `;
+
+    // Add click handler to popup button
+    const button = popupContent.querySelector("button");
+    button.onclick = () => {
+      handleCoordinateChange("longitude", lng);
+      handleCoordinateChange("latitude", lat);
+      if (popupRef.current) {
+        popupRef.current.close();
+      }
+    };
+
+    // Show popup
+    if (popupRef.current) {
+      popupRef.current.remove();
+    }
+    popupRef.current = L.popup()
+      .setLatLng([lat, lng])
+      .setContent(popupContent)
+      .openOn(leafletMap.current);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -215,6 +252,9 @@ const MonitoringPoints = () => {
           </div>
 
           <div className="coordinates-monitoringpoints">
+            <div className="coordinates-hint">
+              Click vào bản đồ để chọn tọa độ hoặc nhập trực tiếp
+            </div>
             <div className="form-group-monitoringpoints">
               <label htmlFor="longitude">Kinh độ</label>
               <input
@@ -263,7 +303,7 @@ const MonitoringPoints = () => {
 
         <div className="preview-map-monitoringpoints" ref={mapRef}></div>
 
-        {previewData ? (
+        {previewData && (
           <div className="preview-card-monitoringpoints">
             <h3>{previewData.name}</h3>
 
@@ -291,10 +331,6 @@ const MonitoringPoints = () => {
               [{previewData.coordinates.coordinates[0].toFixed(6)},{" "}
               {previewData.coordinates.coordinates[1].toFixed(6)}]
             </div>
-          </div>
-        ) : (
-          <div className="no-data-monitoringpoints">
-            Nhập thông tin để xem trước điểm quan trắc
           </div>
         )}
       </div>

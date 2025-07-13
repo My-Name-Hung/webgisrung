@@ -1,23 +1,22 @@
-import { useTour } from "@reactour/tour";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useTourContext } from "../context/TourContext";
 
 const useCustomTour = (steps) => {
   const location = useLocation();
-  const { hasVisitedPage, markPageAsVisited } = useTourContext();
-  const { setIsOpen, setSteps } = useTour();
+  const {
+    hasVisitedPage,
+    markPageAsVisited,
+    startTour,
+    closeTour,
+    isTourOpen,
+  } = useTourContext();
 
   useEffect(() => {
-    // Set steps when component mounts
-    setSteps(steps);
-  }, [steps, setSteps]);
-
-  useEffect(() => {
-    // Auto-start tour for first-time visitors with a small delay
+    // Auto-start tour only for first-time visitors
     if (!hasVisitedPage(location.pathname)) {
       const timer = setTimeout(() => {
-        setIsOpen(true);
+        startTour(steps);
       }, 500);
 
       return () => {
@@ -25,19 +24,21 @@ const useCustomTour = (steps) => {
         markPageAsVisited(location.pathname);
       };
     }
-  }, [location.pathname, hasVisitedPage, markPageAsVisited, setIsOpen]);
+  }, [location.pathname, hasVisitedPage, markPageAsVisited, startTour, steps]);
 
-  const startTour = () => {
-    setSteps(steps);
-    setIsOpen(true);
+  const handleStartTour = () => {
+    startTour(steps);
   };
 
-  const forceTour = () => {
-    setSteps(steps);
-    setIsOpen(true);
+  const handleCloseTour = () => {
+    closeTour();
   };
 
-  return { startTour, forceTour };
+  return {
+    isOpen: isTourOpen,
+    startTour: handleStartTour,
+    closeTour: handleCloseTour,
+  };
 };
 
 export default useCustomTour;

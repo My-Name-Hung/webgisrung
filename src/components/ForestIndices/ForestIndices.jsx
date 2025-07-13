@@ -1,10 +1,43 @@
-import { useTour } from "@reactour/tour";
 import axios from "axios";
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  Title,
+  Tooltip,
+} from "chart.js";
 import React, { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { FaChartBar } from "react-icons/fa";
 import { forestIndicesSteps } from "../../config/tourSteps";
+import useCustomTour from "../../hooks/useTour";
 import "./ForestIndices.css";
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+const formatNumber = (value) => {
+  if (value >= 1000000) {
+    return (
+      (value / 1000000).toLocaleString("vi-VN", { maximumFractionDigits: 2 }) +
+      " triệu"
+    );
+  } else if (value >= 1000) {
+    return value.toLocaleString("vi-VN");
+  }
+  return value.toString();
+};
 
 const ForestIndices = () => {
   const [formData, setFormData] = useState({
@@ -18,25 +51,36 @@ const ForestIndices = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const { setSteps, setIsOpen } = useTour();
+  const { startTour } = useCustomTour(forestIndicesSteps);
 
   useEffect(() => {
     // Start tour when preview data is loaded
     if (previewData) {
-      setSteps(forestIndicesSteps);
-      setIsOpen(true);
+      startTour();
     }
-  }, [previewData, setSteps, setIsOpen]);
+  }, [previewData, startTour]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let newValue = value;
+
+    if (name === "value") {
+      // Remove non-numeric characters except decimal point
+      newValue = value.replace(/[^0-9.]/g, "");
+      // Ensure only one decimal point
+      const parts = newValue.split(".");
+      if (parts.length > 2) {
+        newValue = parts[0] + "." + parts.slice(1).join("");
+      }
+    }
+
     const newFormData = {
       ...formData,
-      [name]: name === "value" ? parseFloat(value) : value,
+      [name]: name === "value" ? parseFloat(newValue) || "" : newValue,
     };
     setFormData(newFormData);
 
-    // Update preview data
+    // Update preview data if all required fields are filled
     if (Object.values(newFormData).every((v) => v !== "")) {
       setPreviewData(newFormData);
     }
@@ -133,15 +177,20 @@ const ForestIndices = () => {
           <div className="form-group-forestindices">
             <label htmlFor="value">Giá trị</label>
             <input
-              type="number"
+              type="text"
               id="value"
               name="value"
               value={formData.value}
               onChange={handleInputChange}
               className="input-forestindices"
-              step="any"
+              placeholder="Nhập giá trị"
               required
             />
+            {formData.value && (
+              <div className="formatted-value">
+                {formatNumber(formData.value)} {formData.unit}
+              </div>
+            )}
           </div>
 
           <div className="form-group-forestindices">
@@ -252,7 +301,11 @@ const ForestIndices = () => {
                           size: 12,
                         },
                         callback: function (value) {
-                          return value + " " + (previewData?.unit || "");
+                          return (
+                            formatNumber(value) +
+                            " " +
+                            (previewData?.unit || "")
+                          );
                         },
                       },
                       title: {
@@ -304,7 +357,7 @@ const ForestIndices = () => {
                 <tr>
                   <td>Giá trị</td>
                   <td>
-                    {previewData.value} {previewData.unit}
+                    {formatNumber(previewData.value)} {previewData.unit}
                   </td>
                 </tr>
                 <tr>

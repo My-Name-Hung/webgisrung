@@ -256,6 +256,16 @@
   line-height: 1.5;
 }
 
+.formatted-value {
+  margin-top: 4px;
+  padding: 4px 8px;
+  background-color: rgba(45, 90, 39, 0.05);
+  border-radius: var(--border-radius-sm);
+  color: #2d5a27;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
 /* Responsive styles */
 @media (max-width: 1024px) {
   .forestindices-container {

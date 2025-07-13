@@ -12,11 +12,21 @@ const router = express.Router();
 // Forest Status Routes
 router.post("/status", auth, async (req, res) => {
   try {
-    const forestStatus = new ForestStatus(req.body);
-    await forestStatus.save();
-    res.status(201).json(forestStatus);
+    const { type, area, quality, lastSurvey, geojson } = req.body;
+
+    const status = new ForestStatus({
+      type,
+      area: parseFloat(area),
+      quality,
+      lastSurvey,
+      geojson,
+    });
+
+    await status.save();
+    res.status(201).json(status);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Error creating forest status:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -52,11 +62,33 @@ router.get("/indices", async (req, res) => {
 // Forest Planning Routes
 router.post("/planning", auth, async (req, res) => {
   try {
-    const forestPlanning = new ForestPlanning(req.body);
-    await forestPlanning.save();
-    res.status(201).json(forestPlanning);
+    const {
+      name,
+      area,
+      type,
+      status,
+      startDate,
+      endDate,
+      description,
+      geojson,
+    } = req.body;
+
+    const planning = new ForestPlanning({
+      name,
+      area: parseFloat(area),
+      type,
+      status,
+      startDate,
+      endDate,
+      description,
+      geojson,
+    });
+
+    await planning.save();
+    res.status(201).json(planning);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error("Error creating forest planning:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
