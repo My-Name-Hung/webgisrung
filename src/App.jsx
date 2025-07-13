@@ -21,7 +21,7 @@ import Login from "./components/Login/Login";
 import MonitoringPoints from "./components/MonitoringPoints/MonitoringPoints";
 
 // Styles
-import "./App.module.css";
+import "./App.css";
 
 const tourConfig = {
   styles: {

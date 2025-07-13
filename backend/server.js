@@ -17,7 +17,10 @@ import { fileURLToPath } from "url";
 // Import routes and models
 import Admin from "./models/Admin.js";
 import authRoutes from "./routes/auth.js";
+import forestRoutes from "./routes/forest.js";
 import forestDataRoutes from "./routes/forestData.js";
+import geojsonRoutes from "./routes/geojson.js";
+import monitoringRoutes from "./routes/monitoring.js";
 
 // Configure environment variables
 dotenv.config();
@@ -294,6 +297,9 @@ const startServer = async () => {
     // Routes
     app.use("/api/auth", authRoutes);
     app.use("/api/forest-data", forestDataRoutes);
+    app.use("/api/forest", forestRoutes);
+    app.use("/api/geojson", geojsonRoutes);
+    app.use("/api/monitoring", monitoringRoutes);
 
     // Error handling middleware
     app.use((err, req, res, next) => {

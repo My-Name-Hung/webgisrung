@@ -1,0 +1,267 @@
+.forestmap-container {
+  padding: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  min-height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.title-forestmap {
+  color: #2d5a27;
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-xl);
+  position: relative;
+  display: inline-block;
+  grid-column: 1 / -1;
+}
+
+.title-forestmap::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 2px;
+}
+
+.upload-section-forestmap {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  backdrop-filter: blur(10px);
+  height: auto;
+}
+
+.preview-section-forestmap {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  backdrop-filter: blur(10px);
+  height: calc(100vh - 160px);
+  display: flex;
+  flex-direction: column;
+}
+
+.map-container-forestmap {
+  flex: 1;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.upload-form-forestmap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-group-forestmap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-group-forestmap label {
+  color: #2d5a27;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.input-forestmap {
+  padding: var(--spacing-sm);
+  border: 1px solid rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-sm);
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.input-forestmap:focus {
+  border-color: #2d5a27;
+  box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1);
+}
+
+.file-input-forestmap {
+  padding: var(--spacing-lg);
+  border: 2px dashed rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-md);
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.file-input-forestmap:hover {
+  border-color: #2d5a27;
+  background-color: rgba(204, 255, 170, 0.1);
+}
+
+.file-preview-forestmap {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+}
+
+.upload-button-forestmap {
+  background: linear-gradient(90deg, #2d5a27 0%, #1a472a 100%);
+  color: white;
+  border: none;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-button-forestmap:hover:not(:disabled) {
+  background: linear-gradient(90deg, #1a472a 0%, #2d5a27 100%);
+  transform: translateY(-1px);
+}
+
+.upload-button-forestmap:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.error-forestmap {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.success-forestmap {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border: 1px solid #22c55e;
+  color: #15803d;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.map-controls-forestmap {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  z-index: 1000;
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.map-control-button {
+  background: white;
+  border: 1px solid rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-control-button:hover {
+  background: #f0f9ff;
+  border-color: #2d5a27;
+}
+
+.map-list-forestmap {
+  background-color: var(--surface);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+}
+
+.map-list-forestmap h2 {
+  color: var(--text-primary);
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-lg);
+}
+
+.map-grid-forestmap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.map-card-forestmap {
+  background-color: var(--background);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.map-info-forestmap h3 {
+  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-xs);
+}
+
+.map-info-forestmap p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.map-actions-forestmap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.delete-button-forestmap {
+  composes: button from global;
+  background-color: #e53e3e;
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.no-data-forestmap {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .forestmap-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .preview-section-forestmap {
+    height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .preview-section-forestmap {
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-forestmap {
+    font-size: var(--font-size-xl);
+  }
+
+  .preview-section-forestmap {
+    height: 300px;
+  }
+}

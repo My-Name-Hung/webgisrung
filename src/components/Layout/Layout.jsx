@@ -26,10 +26,13 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useTourContext } from "../../context/TourContext";
 import UserModal from "../UserModal/UserModal";
-import styles from "./Layout.module.css";
+import "./Layout.css";
 
 const Layout = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("theme");
+    return savedTheme === "dark" ? true : false;
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const { admin, logout } = useAuth();
@@ -58,15 +61,6 @@ const Layout = () => {
         return layoutSteps;
     }
   };
-
-  useEffect(() => {
-    // Check system preference
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    const savedTheme = localStorage.getItem("theme");
-    setIsDarkMode(savedTheme === "dark" || (!savedTheme && prefersDark));
-  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -159,17 +153,15 @@ const Layout = () => {
   ];
 
   return (
-    <div className={styles.layout} data-tour="layout">
+    <div className="layout" data-tour="layout">
       <aside
-        className={`${styles.sidebar} ${
-          !isSidebarOpen ? styles.collapsed : ""
-        }`}
+        className={`sidebar ${!isSidebarOpen ? "collapsed" : ""}`}
         data-tour="sidebar"
       >
-        <div className={styles.sidebarHeader}>
+        <div className="sidebar-header">
           <h1>QUẢN LÝ RỪNG</h1>
           <button
-            className={styles.menuToggle}
+            className="menu-toggle"
             onClick={toggleSidebar}
             aria-label="Chuyển đổi menu"
           >
@@ -177,24 +169,24 @@ const Layout = () => {
           </button>
         </div>
 
-        <nav className={styles.navigation}>
+        <nav className="navigation">
           {navItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}
-              className={styles.navItem}
+              className="nav-item"
               title={!isSidebarOpen ? item.label : undefined}
             >
-              <span className={styles.icon}>{item.icon}</span>
-              <span className={styles.label}>{item.label}</span>
+              <span className="icon">{item.icon}</span>
+              <span className="label">{item.label}</span>
             </Link>
           ))}
         </nav>
 
-        <div className={styles.sidebarFooter}>
-          <div className={styles.tourButtons}>
+        <div className="sidebar-footer">
+          <div className="tour-buttons">
             <button
-              className={styles.tourButton}
+              className="tour-button"
               onClick={handleStartTour}
               title="Xem hướng dẫn"
             >
@@ -202,7 +194,7 @@ const Layout = () => {
               {isSidebarOpen && <span>Hướng dẫn</span>}
             </button>
             <button
-              className={styles.tourButton}
+              className="tour-button"
               onClick={handleResetTour}
               title="Đặt lại hướng dẫn"
             >
@@ -212,24 +204,24 @@ const Layout = () => {
           </div>
 
           <div
-            className={styles.userInfo}
+            className="user-info"
             onClick={handleOpenUserModal}
             style={{ cursor: "pointer" }}
             data-tour="userInfo"
           >
-            <FaUser className={styles.userIcon} />
-            <div className={styles.userDetails}>
-              <span className={styles.username}>{admin?.username}</span>
-              <span className={styles.email}>{admin?.email}</span>
+            <FaUser className="user-icon" />
+            <div className="user-details">
+              <span className="username">{admin?.username}</span>
+              <span className="email">{admin?.email}</span>
             </div>
           </div>
         </div>
       </aside>
 
-      <main className={styles.main}>
-        <div className={styles.mainHeader}>
+      <main className="main">
+        <div className="main-header">
           <button
-            className={styles.mobileMenuToggle}
+            className="mobile-menu-toggle"
             onClick={toggleSidebar}
             aria-label="Chuyển đổi menu di động"
           >
@@ -237,7 +229,7 @@ const Layout = () => {
           </button>
         </div>
 
-        <div className={styles.content}>
+        <div className="content">
           <Outlet />
         </div>
       </main>

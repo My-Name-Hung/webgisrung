@@ -103,12 +103,12 @@ body {
   transform: translateY(1px);
 }
 
-.button.primary {
+.button-primary {
   background-color: var(--primary);
   color: white;
 }
 
-.button.secondary {
+.button-secondary {
   background-color: var(--secondary);
   color: white;
 }

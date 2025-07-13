@@ -1,11 +1,12 @@
 import { useTour } from "@reactour/tour";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import React, { useEffect, useRef, useState } from "react";
 import { monitoringSteps } from "../../config/tourSteps";
-import styles from "./MonitoringPoints.module.css";
+import "./MonitoringPoints.css";
 
 const MonitoringPoints = () => {
-  const [points, setPoints] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -15,74 +16,122 @@ const MonitoringPoints = () => {
       coordinates: [0, 0],
     },
   });
-  const [editingId, setEditingId] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const mapRef = useRef(null);
+  const leafletMap = useRef(null);
+  const markerRef = useRef(null);
   const { setSteps, setIsOpen } = useTour();
 
   useEffect(() => {
-    fetchPoints();
+    // Initialize Leaflet map
+    if (!leafletMap.current && mapRef.current) {
+      leafletMap.current = L.map(mapRef.current).setView(
+        [20.865139, 106.68383],
+        11
+      );
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+      }).addTo(leafletMap.current);
+
+      // Add click handler to update coordinates
+      leafletMap.current.on("click", (e) => {
+        const { lat, lng } = e.latlng;
+        handleCoordinateChange("longitude", lng);
+        handleCoordinateChange("latitude", lat);
+      });
+    }
+
+    return () => {
+      if (leafletMap.current) {
+        leafletMap.current.remove();
+        leafletMap.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
-    // Start tour when data is loaded
-    if (points.length > 0) {
+    // Start tour when preview data is loaded
+    if (previewData) {
       setSteps(monitoringSteps);
       setIsOpen(true);
     }
-  }, [points, setSteps, setIsOpen]);
-
-  const fetchPoints = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_SERVER_URL}/api/monitoring`
-      );
-      setPoints(response.data);
-    } catch (err) {
-      setError("Không thể tải danh sách điểm quan trắc");
-    }
-  };
+  }, [previewData, setSteps, setIsOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "longitude" || name === "latitude") {
-      setFormData((prev) => ({
-        ...prev,
-        coordinates: {
-          ...prev.coordinates,
-          coordinates:
-            name === "longitude"
-              ? [parseFloat(value), prev.coordinates.coordinates[1]]
-              : [prev.coordinates.coordinates[0], parseFloat(value)],
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+    const newFormData = {
+      ...formData,
+      [name]: value,
+    };
+    setFormData(newFormData);
+
+    // Update preview data if all required fields are filled
+    if (
+      Object.values(newFormData).every((v) => v !== "") &&
+      newFormData.coordinates.coordinates.every((c) => c !== 0)
+    ) {
+      setPreviewData(newFormData);
+    }
+  };
+
+  const handleCoordinateChange = (type, value) => {
+    const index = type === "longitude" ? 0 : 1;
+    const newCoordinates = [...formData.coordinates.coordinates];
+    newCoordinates[index] = parseFloat(value);
+
+    const newFormData = {
+      ...formData,
+      coordinates: {
+        ...formData.coordinates,
+        coordinates: newCoordinates,
+      },
+    };
+    setFormData(newFormData);
+
+    // Update marker on map
+    if (leafletMap.current) {
+      if (markerRef.current) {
+        markerRef.current.remove();
+      }
+      markerRef.current = L.marker([
+        newCoordinates[1],
+        newCoordinates[0],
+      ]).addTo(leafletMap.current);
+      leafletMap.current.setView(
+        [newCoordinates[1], newCoordinates[0]],
+        leafletMap.current.getZoom()
+      );
+    }
+
+    // Update preview data if all required fields are filled
+    if (
+      Object.values(newFormData).every((v) => v !== "") &&
+      newFormData.coordinates.coordinates.every((c) => c !== 0)
+    ) {
+      setPreviewData(newFormData);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!previewData) {
+      setError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      if (editingId) {
-        await axios.put(
-          `${import.meta.env.VITE_SERVER_URL}/api/monitoring/${editingId}`,
-          formData
-        );
-        setSuccess("Cập nhật điểm quan trắc thành công");
-      } else {
-        await axios.post(
-          `${import.meta.env.VITE_SERVER_URL}/api/monitoring`,
-          formData
-        );
-        setSuccess("Thêm điểm quan trắc thành công");
-      }
-
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/monitoring`,
+        previewData
+      );
+      setSuccess("Thêm điểm quan trắc thành công");
       setFormData({
         name: "",
         type: "",
@@ -92,51 +141,32 @@ const MonitoringPoints = () => {
           coordinates: [0, 0],
         },
       });
-      setEditingId(null);
-      fetchPoints();
+      setPreviewData(null);
+
+      // Clear marker
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
     } catch (err) {
-      setError("Không thể lưu điểm quan trắc");
+      setError("Không thể thêm điểm quan trắc");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEdit = (point) => {
-    setFormData({
-      name: point.name,
-      type: point.type,
-      status: point.status,
-      coordinates: point.coordinates,
-    });
-    setEditingId(point._id);
-  };
-
-  const handleDelete = async (id) => {
-    try {
-      await axios.delete(
-        `${import.meta.env.VITE_SERVER_URL}/api/monitoring/${id}`
-      );
-      setSuccess("Xóa điểm quan trắc thành công");
-      fetchPoints();
-    } catch (err) {
-      setError("Không thể xóa điểm quan trắc");
-    }
-  };
-
   return (
-    <div className={styles.monitoringPoints}>
-      <h1 className={styles.title}>Quản lý điểm quan trắc</h1>
+    <div className="monitoringpoints-container">
+      <h1 className="title-monitoringpoints">Quản lý điểm quan trắc</h1>
 
-      <div className={`${styles.formSection} formSection`}>
-        <h2>
-          {editingId ? "Cập nhật điểm quan trắc" : "Thêm điểm quan trắc mới"}
-        </h2>
+      <div className="form-section-monitoringpoints">
+        <h2>Thêm điểm quan trắc mới</h2>
 
-        {error && <div className={styles.error}>{error}</div>}
-        {success && <div className={styles.success}>{success}</div>}
+        {error && <div className="error-monitoringpoints">{error}</div>}
+        {success && <div className="success-monitoringpoints">{success}</div>}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
+        <form onSubmit={handleSubmit} className="form-monitoringpoints">
+          <div className="form-group-monitoringpoints">
             <label htmlFor="name">Tên điểm</label>
             <input
               type="text"
@@ -144,20 +174,20 @@ const MonitoringPoints = () => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-monitoringpoints"
               placeholder="Nhập tên điểm quan trắc"
               required
             />
           </div>
 
-          <div className={styles.formGroup}>
+          <div className="form-group-monitoringpoints">
             <label htmlFor="type">Loại điểm</label>
             <select
               id="type"
               name="type"
               value={formData.type}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-monitoringpoints"
               required
             >
               <option value="">Chọn loại điểm</option>
@@ -167,14 +197,14 @@ const MonitoringPoints = () => {
             </select>
           </div>
 
-          <div className={styles.formGroup}>
+          <div className="form-group-monitoringpoints">
             <label htmlFor="status">Trạng thái</label>
             <select
               id="status"
               name="status"
               value={formData.status}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-monitoringpoints"
               required
             >
               <option value="">Chọn trạng thái</option>
@@ -184,30 +214,34 @@ const MonitoringPoints = () => {
             </select>
           </div>
 
-          <div className={styles.coordinates}>
-            <div className={styles.formGroup}>
+          <div className="coordinates-monitoringpoints">
+            <div className="form-group-monitoringpoints">
               <label htmlFor="longitude">Kinh độ</label>
               <input
                 type="number"
                 id="longitude"
                 name="longitude"
                 value={formData.coordinates.coordinates[0]}
-                onChange={handleInputChange}
-                className={styles.input}
+                onChange={(e) =>
+                  handleCoordinateChange("longitude", e.target.value)
+                }
+                className="input-monitoringpoints"
                 step="any"
                 required
               />
             </div>
 
-            <div className={styles.formGroup}>
+            <div className="form-group-monitoringpoints">
               <label htmlFor="latitude">Vĩ độ</label>
               <input
                 type="number"
                 id="latitude"
                 name="latitude"
                 value={formData.coordinates.coordinates[1]}
-                onChange={handleInputChange}
-                className={styles.input}
+                onChange={(e) =>
+                  handleCoordinateChange("latitude", e.target.value)
+                }
+                className="input-monitoringpoints"
                 step="any"
                 required
               />
@@ -216,66 +250,51 @@ const MonitoringPoints = () => {
 
           <button
             type="submit"
-            className={styles.submitButton}
-            disabled={loading}
+            className="submit-button-monitoringpoints"
+            disabled={loading || !previewData}
           >
-            {loading ? "Đang lưu..." : editingId ? "Cập nhật" : "Thêm mới"}
+            {loading ? "Đang lưu..." : "Thêm mới"}
           </button>
-
-          {editingId && (
-            <button
-              type="button"
-              className={styles.cancelButton}
-              onClick={() => {
-                setEditingId(null);
-                setFormData({
-                  name: "",
-                  type: "",
-                  status: "",
-                  coordinates: {
-                    type: "Point",
-                    coordinates: [0, 0],
-                  },
-                });
-              }}
-            >
-              Hủy
-            </button>
-          )}
         </form>
       </div>
 
-      <div className={`${styles.pointsList} pointsList`}>
-        <h2>Danh sách điểm quan trắc</h2>
+      <div className="preview-section-monitoringpoints">
+        <h2>Xem trước điểm quan trắc</h2>
 
-        {points.length === 0 ? (
-          <p className={styles.noData}>Chưa có điểm quan trắc nào</p>
-        ) : (
-          <div className={styles.pointsGrid}>
-            {points.map((point) => (
-              <div key={point._id} className={styles.pointCard}>
-                <div className={styles.pointInfo}>
-                  <h3>{point.name}</h3>
-                  <p>Loại: {point.type}</p>
-                  <p>Trạng thái: {point.status}</p>
-                  <p>Tọa độ: {point.coordinates.coordinates.join(", ")}</p>
-                </div>
-                <div className={styles.pointActions}>
-                  <button
-                    onClick={() => handleEdit(point)}
-                    className={styles.editButton}
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(point._id)}
-                    className={styles.deleteButton}
-                  >
-                    Xóa
-                  </button>
-                </div>
+        <div className="preview-map-monitoringpoints" ref={mapRef}></div>
+
+        {previewData ? (
+          <div className="preview-card-monitoringpoints">
+            <h3>{previewData.name}</h3>
+
+            <div className="preview-details-monitoringpoints">
+              <div className="preview-detail-item-monitoringpoints">
+                <span className="preview-detail-label-monitoringpoints">
+                  Loại điểm
+                </span>
+                <span className="preview-detail-value-monitoringpoints">
+                  {previewData.type}
+                </span>
               </div>
-            ))}
+
+              <div className="preview-detail-item-monitoringpoints">
+                <span className="preview-detail-label-monitoringpoints">
+                  Trạng thái
+                </span>
+                <span className="preview-detail-value-monitoringpoints">
+                  {previewData.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="preview-coordinates-monitoringpoints">
+              [{previewData.coordinates.coordinates[0].toFixed(6)},{" "}
+              {previewData.coordinates.coordinates[1].toFixed(6)}]
+            </div>
+          </div>
+        ) : (
+          <div className="no-data-monitoringpoints">
+            Nhập thông tin để xem trước điểm quan trắc
           </div>
         )}
       </div>

@@ -1,10 +1,112 @@
 import mongoose from "mongoose";
 
+const forestStatusSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    required: true,
+    enum: ["Rừng tự nhiên", "Rừng trồng", "Rừng phòng hộ", "Rừng đặc dụng"],
+  },
+  area: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  quality: {
+    type: String,
+    required: true,
+    enum: ["Tốt", "Trung bình", "Kém"],
+  },
+  lastSurvey: {
+    type: Date,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const forestIndicesSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  value: {
+    type: Number,
+    required: true,
+  },
+  unit: {
+    type: String,
+    required: true,
+  },
+  year: {
+    type: Number,
+    required: true,
+  },
+  category: {
+    type: String,
+    required: true,
+    enum: ["Độ che phủ", "Chất lượng", "Đa dạng sinh học", "Bảo tồn"],
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const forestPlanningSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  area: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ["Trồng rừng", "Bảo tồn", "Phát triển", "Phục hồi"],
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ["planned", "in-progress", "completed", "cancelled"],
+    default: "planned",
+  },
+  startDate: {
+    type: Date,
+    required: true,
+  },
+  endDate: {
+    type: Date,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const monitoringPointSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true,
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ["Thường xuyên", "Định kỳ", "Đột xuất"],
+  },
+  status: {
+    type: String,
+    required: true,
+    enum: ["Hoạt động", "Tạm dừng", "Ngưng hoạt động"],
   },
   coordinates: {
     type: {
@@ -17,102 +119,49 @@ const monitoringPointSchema = new mongoose.Schema({
       required: true,
     },
   },
-  description: String,
-  status: {
-    type: String,
-    enum: ["active", "inactive", "maintenance"],
-    default: "active",
-  },
-});
-
-const forestIndicesSchema = new mongoose.Schema({
-  canopyCover: {
-    type: Number,
-    min: 0,
-    max: 100,
-  },
-  biodiversityIndex: {
-    type: Number,
-    min: 0,
-    max: 10,
-  },
-  healthStatus: {
-    type: String,
-    enum: ["excellent", "good", "fair", "poor"],
-    required: true,
-  },
-  date: {
+  createdAt: {
     type: Date,
-    required: true,
+    default: Date.now,
   },
 });
 
-const forestDataSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    location: {
-      type: {
-        type: String,
-        enum: ["Polygon"],
-        required: true,
-      },
-      coordinates: {
-        type: [[[Number]]],
-        required: true,
-      },
-    },
-    area: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    forestType: {
-      type: String,
-      required: true,
-      enum: ["natural", "plantation", "protected", "production"],
-    },
-    monitoringPoints: [monitoringPointSchema],
-    indices: [forestIndicesSchema],
-    status: {
-      type: String,
-      enum: ["healthy", "threatened", "degraded", "recovering"],
-      required: true,
-    },
-    lastUpdated: {
-      type: Date,
-      default: Date.now,
-    },
-    planningStatus: {
-      type: String,
-      enum: ["planned", "in-progress", "completed", "cancelled"],
-      default: "planned",
-    },
-    notes: String,
-    attachments: [
-      {
-        name: String,
-        url: String,
-        type: String,
-        uploadDate: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+const geoJSONMapSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
   },
-  {
-    timestamps: true,
-  }
-);
+  type: {
+    type: String,
+    required: true,
+    enum: ["Hiện trạng", "Quy hoạch", "Điểm quan trắc"],
+  },
+  data: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-// Index for geospatial queries
-forestDataSchema.index({ location: "2dsphere" });
+// Create indexes for geospatial queries
 monitoringPointSchema.index({ coordinates: "2dsphere" });
 
-const ForestData = mongoose.model("ForestData", forestDataSchema);
+// Create models
+const ForestStatus = mongoose.model("ForestStatus", forestStatusSchema);
+const ForestIndices = mongoose.model("ForestIndices", forestIndicesSchema);
+const ForestPlanning = mongoose.model("ForestPlanning", forestPlanningSchema);
+const MonitoringPoint = mongoose.model(
+  "MonitoringPoint",
+  monitoringPointSchema
+);
+const GeoJSONMap = mongoose.model("GeoJSONMap", geoJSONMapSchema);
 
-export default ForestData;
+export {
+  ForestIndices,
+  ForestPlanning,
+  ForestStatus,
+  GeoJSONMap,
+  MonitoringPoint,
+};

@@ -1,0 +1,269 @@
+.foreststatus-container {
+  padding: var(--spacing-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+  min-height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+.title-foreststatus {
+  color: #2d5a27;
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-xl);
+  position: relative;
+  display: inline-block;
+  grid-column: 1 / -1;
+}
+
+.title-foreststatus::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 2px;
+}
+
+.form-section-foreststatus {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  backdrop-filter: blur(10px);
+  height: auto;
+}
+
+.preview-section-foreststatus {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.8) 100%
+  );
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  backdrop-filter: blur(10px);
+  height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+.form-section-foreststatus h2,
+.preview-section-foreststatus h2 {
+  color: #2d5a27;
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-lg);
+  position: relative;
+  display: inline-block;
+}
+
+.form-section-foreststatus h2::after,
+.preview-section-foreststatus h2::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, #2d5a27 0%, #ccffaa 100%);
+  border-radius: 1px;
+}
+
+.form-foreststatus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.form-group-foreststatus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.form-group-foreststatus label {
+  color: #2d5a27;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.input-foreststatus {
+  padding: var(--spacing-sm);
+  border: 1px solid rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-sm);
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.input-foreststatus:focus {
+  border-color: #2d5a27;
+  box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1);
+}
+
+.submit-button-foreststatus {
+  background: linear-gradient(90deg, #2d5a27 0%, #1a472a 100%);
+  color: white;
+  border: none;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-button-foreststatus:hover:not(:disabled) {
+  background: linear-gradient(90deg, #1a472a 0%, #2d5a27 100%);
+  transform: translateY(-1px);
+}
+
+.submit-button-foreststatus:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.preview-card-foreststatus {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+}
+
+.preview-card-foreststatus h3 {
+  color: #2d5a27;
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-area-foreststatus {
+  color: #2d5a27;
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.preview-details-foreststatus {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+
+.preview-detail-item-foreststatus {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.preview-detail-label-foreststatus {
+  color: rgba(45, 90, 39, 0.8);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.preview-detail-value-foreststatus {
+  color: #2d5a27;
+  font-size: var(--font-size-md);
+}
+
+.preview-quality-foreststatus {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.preview-quality-foreststatus.tot {
+  background-color: rgba(72, 187, 120, 0.1);
+  color: #2f855a;
+}
+
+.preview-quality-foreststatus.trung-binh {
+  background-color: rgba(246, 173, 85, 0.1);
+  color: #c05621;
+}
+
+.preview-quality-foreststatus.kem {
+  background-color: rgba(245, 101, 101, 0.1);
+  color: #c53030;
+}
+
+.preview-chart-foreststatus {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-lg);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  height: 200px;
+}
+
+.error-foreststatus {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.success-foreststatus {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border: 1px solid #22c55e;
+  color: #15803d;
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.no-data-foreststatus {
+  color: rgba(45, 90, 39, 0.6);
+  text-align: center;
+  padding: var(--spacing-xl);
+}
+
+/* Responsive styles */
+@media (max-width: 1024px) {
+  .foreststatus-container {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .form-section-foreststatus,
+  .preview-section-foreststatus {
+    height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .preview-details-foreststatus {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-chart-foreststatus {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-foreststatus {
+    font-size: var(--font-size-xl);
+  }
+
+  .form-section-foreststatus h2,
+  .preview-section-foreststatus h2 {
+    font-size: var(--font-size-lg);
+  }
+
+  .preview-area-foreststatus {
+    font-size: var(--font-size-lg);
+  }
+}

@@ -3,53 +3,49 @@ import React, { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import { forestStatusSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
-import styles from "./ForestStatus.module.css";
+import "./ForestStatus.css";
 
 const ForestStatus = () => {
-  const [statusList, setStatusList] = useState([]);
   const [formData, setFormData] = useState({
     type: "",
     area: "",
     quality: "",
     lastSurvey: new Date().toISOString().split("T")[0],
   });
+  const [previewData, setPreviewData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { startTour } = useCustomTour(forestStatusSteps);
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
-
-  useEffect(() => {
-    // Start tour when data is loaded
-    if (statusList.length > 0) {
+    // Start tour when preview data is loaded
+    if (previewData) {
       startTour();
     }
-  }, [statusList, startTour]);
-
-  const fetchStatus = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_SERVER_URL}/api/forest/status`
-      );
-      setStatusList(response.data);
-    } catch (err) {
-      setError("Không thể tải dữ liệu hiện trạng rừng");
-    }
-  };
+  }, [previewData, startTour]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: name === "area" ? parseFloat(value) : value,
-    }));
+    };
+    setFormData(newFormData);
+
+    // Update preview data if all required fields are filled
+    if (Object.values(newFormData).every((v) => v !== "")) {
+      setPreviewData(newFormData);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!previewData) {
+      setError("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -57,7 +53,7 @@ const ForestStatus = () => {
     try {
       await axios.post(
         `${import.meta.env.VITE_SERVER_URL}/api/forest/status`,
-        formData
+        previewData
       );
       setSuccess("Thêm hiện trạng rừng thành công");
       setFormData({
@@ -66,7 +62,7 @@ const ForestStatus = () => {
         quality: "",
         lastSurvey: new Date().toISOString().split("T")[0],
       });
-      fetchStatus();
+      setPreviewData(null);
     } catch (err) {
       setError("Không thể thêm hiện trạng rừng");
     } finally {
@@ -74,42 +70,48 @@ const ForestStatus = () => {
     }
   };
 
-  // Prepare chart data
-  const chartData = {
-    labels: statusList.map((s) => s.type),
-    datasets: [
-      {
-        label: "Diện tích (ha)",
-        data: statusList.map((s) => s.area),
-        backgroundColor: [
-          "rgba(44, 122, 123, 0.8)",
-          "rgba(56, 178, 172, 0.8)",
-          "rgba(49, 151, 149, 0.8)",
-          "rgba(72, 187, 120, 0.8)",
+  // Prepare preview chart data
+  const chartData = previewData
+    ? {
+        labels: [previewData.type],
+        datasets: [
+          {
+            label: "Diện tích (ha)",
+            data: [previewData.area],
+            backgroundColor: ["rgba(44, 122, 123, 0.8)"],
+          },
         ],
-      },
-    ],
-  };
+      }
+    : {
+        labels: [],
+        datasets: [
+          {
+            label: "Diện tích (ha)",
+            data: [],
+            backgroundColor: [],
+          },
+        ],
+      };
 
   return (
-    <div className={styles.forestStatus}>
-      <h1 className={styles.title}>Quản lý hiện trạng rừng</h1>
+    <div className="foreststatus-container">
+      <h1 className="title-foreststatus">Quản lý hiện trạng rừng</h1>
 
-      <div className={`${styles.formSection} formSection`}>
+      <div className="form-section-foreststatus">
         <h2>Thêm hiện trạng mới</h2>
 
-        {error && <div className={styles.error}>{error}</div>}
-        {success && <div className={styles.success}>{success}</div>}
+        {error && <div className="error-foreststatus">{error}</div>}
+        {success && <div className="success-foreststatus">{success}</div>}
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
+        <form onSubmit={handleSubmit} className="form-foreststatus">
+          <div className="form-group-foreststatus">
             <label htmlFor="type">Loại rừng</label>
             <select
               id="type"
               name="type"
               value={formData.type}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-foreststatus"
               required
             >
               <option value="">Chọn loại rừng</option>
@@ -120,7 +122,7 @@ const ForestStatus = () => {
             </select>
           </div>
 
-          <div className={styles.formGroup}>
+          <div className="form-group-foreststatus">
             <label htmlFor="area">Diện tích (ha)</label>
             <input
               type="number"
@@ -128,21 +130,21 @@ const ForestStatus = () => {
               name="area"
               value={formData.area}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-foreststatus"
               step="0.01"
               min="0"
               required
             />
           </div>
 
-          <div className={styles.formGroup}>
+          <div className="form-group-foreststatus">
             <label htmlFor="quality">Chất lượng</label>
             <select
               id="quality"
               name="quality"
               value={formData.quality}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-foreststatus"
               required
             >
               <option value="">Chọn chất lượng</option>
@@ -152,7 +154,7 @@ const ForestStatus = () => {
             </select>
           </div>
 
-          <div className={styles.formGroup}>
+          <div className="form-group-foreststatus">
             <label htmlFor="lastSurvey">Ngày khảo sát</label>
             <input
               type="date"
@@ -160,69 +162,82 @@ const ForestStatus = () => {
               name="lastSurvey"
               value={formData.lastSurvey}
               onChange={handleInputChange}
-              className={styles.input}
+              className="input-foreststatus"
               required
             />
           </div>
 
           <button
             type="submit"
-            className={styles.submitButton}
-            disabled={loading}
+            className="submit-button-foreststatus"
+            disabled={loading || !previewData}
           >
             {loading ? "Đang lưu..." : "Thêm mới"}
           </button>
         </form>
       </div>
 
-      <div className={`${styles.chartSection} chartSection`}>
-        <h2>Biểu đồ diện tích theo loại rừng</h2>
-        <div className={styles.chart}>
-          <Bar
-            data={chartData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "bottom",
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: "Diện tích (ha)",
-                  },
-                },
-              },
-            }}
-          />
-        </div>
-      </div>
+      <div className="preview-section-foreststatus">
+        <h2>Xem trước hiện trạng</h2>
 
-      <div className={`${styles.statusList} statusList`}>
-        <h2>Danh sách hiện trạng</h2>
+        {previewData ? (
+          <>
+            <div className="preview-card-foreststatus">
+              <h3>{previewData.type}</h3>
+              <p className="preview-area-foreststatus">
+                {previewData.area.toLocaleString()} ha
+              </p>
 
-        {statusList.length === 0 ? (
-          <p className={styles.noData}>Chưa có dữ liệu hiện trạng</p>
-        ) : (
-          <div className={styles.statusGrid}>
-            {statusList.map((status, i) => (
-              <div key={i} className={styles.statusCard}>
-                <h3>{status.type}</h3>
-                <p className={styles.area}>{status.area.toLocaleString()} ha</p>
-                <p className={styles.quality}>
-                  Chất lượng:{" "}
-                  <span className={styles[status.quality.toLowerCase()]}>
-                    {status.quality}
+              <div className="preview-details-foreststatus">
+                <div className="preview-detail-item-foreststatus">
+                  <span className="preview-detail-label-foreststatus">
+                    Chất lượng
                   </span>
-                </p>
-                <p>
-                  Khảo sát: {new Date(status.lastSurvey).toLocaleDateString()}
-                </p>
+                  <span
+                    className={`preview-quality-foreststatus ${previewData.quality.toLowerCase()}`}
+                  >
+                    {previewData.quality}
+                  </span>
+                </div>
+
+                <div className="preview-detail-item-foreststatus">
+                  <span className="preview-detail-label-foreststatus">
+                    Ngày khảo sát
+                  </span>
+                  <span className="preview-detail-value-foreststatus">
+                    {new Date(previewData.lastSurvey).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
-            ))}
+            </div>
+
+            <div className="preview-chart-foreststatus">
+              <Bar
+                data={chartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: "Diện tích (ha)",
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="no-data-foreststatus">
+            Nhập thông tin để xem trước hiện trạng
           </div>
         )}
       </div>
@@ -231,4 +246,3 @@ const ForestStatus = () => {
 };
 
 export default ForestStatus;
- 

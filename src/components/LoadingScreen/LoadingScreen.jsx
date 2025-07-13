@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaTree } from "react-icons/fa";
 import logo from "../../assets/Logo/icon.png";
-import styles from "./LoadingScreen.module.css";
+import "./LoadingScreen.css";
 
 const LoadingScreen = () => {
   const [showPattern, setShowPattern] = useState(false);
@@ -15,16 +15,16 @@ const LoadingScreen = () => {
   }, []);
 
   return (
-    <div className={styles.loadingScreen}>
-      <div className={styles.loadingContent}>
-        <div className={styles.imageContainer}>
+    <div className="loading-screen">
+      <div className="loading-content">
+        <div className="image-container">
           {!showPattern ? (
-            <img src={logo} alt="Logo" className={styles.logo} />
+            <img src={logo} alt="Logo" className="logo" />
           ) : (
-            <FaTree className={styles.pattern} />
+            <FaTree className="pattern" />
           )}
         </div>
-        <h1 className={styles.title}>Chi cục Kiểm lâm Hải Phòng</h1>
+        <h1 className="title">Chi cục Kiểm lâm Hải Phòng</h1>
       </div>
     </div>
   );

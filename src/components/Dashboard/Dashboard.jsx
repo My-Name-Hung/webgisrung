@@ -6,18 +6,19 @@ import {
   CategoryScale,
   Chart as ChartJS,
   Legend,
-  LineElement,
   LinearScale,
+  LineElement,
   PointElement,
   Title,
   Tooltip,
 } from "chart.js";
 import React, { useEffect, useState } from "react";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { FaChartBar, FaChartLine, FaChartPie } from "react-icons/fa";
 import { dashboardSteps } from "../../config/tourSteps";
-import styles from "./Dashboard.module.css";
+import "./Dashboard.css";
 
-// Đăng ký các thành phần ChartJS
+// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,6 +29,13 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend
+);
+
+const EmptyChart = ({ icon: Icon, message }) => (
+  <div className="empty-chart-dashboard">
+    <Icon />
+    <p>{message}</p>
+  </div>
 );
 
 const Dashboard = () => {
@@ -62,11 +70,16 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <div className={styles.loading}>Đang tải dữ liệu...</div>;
+    return (
+      <div className="loading-dashboard">
+        <div className="loading-spinner-dashboard" />
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className={styles.error}>{error}</div>;
+    return <div className="error-dashboard">{error}</div>;
   }
 
   const forestAreaData = {
@@ -115,80 +128,123 @@ const Dashboard = () => {
     ],
   };
 
-  return (
-    <div className={styles.dashboard}>
-      <h1 className={styles.title}>Tổng quan</h1>
+  const hasAreaData = forestAreaData.labels.length > 0;
+  const hasQualityData = forestQualityData.datasets[0].data.some((d) => d > 0);
+  const hasIndicesData = forestIndicesData.labels.length > 0;
 
-      <div className={`${styles.statsGrid} statsGrid`} data-tour="statsGrid">
-        <div className={styles.statCard}>
+  return (
+    <div className="dashboard-container">
+      <h1 className="title-dashboard">Tổng quan</h1>
+
+      <div className="stats-grid-dashboard">
+        <div className="stat-card-dashboard">
           <h3>Tổng diện tích rừng</h3>
-          <p className={styles.statValue}>
+          <p className="stat-value-dashboard">
             {dashboardData?.status
               ?.reduce((sum, s) => sum + s.area, 0)
-              .toLocaleString()}{" "}
+              .toLocaleString() || "0"}{" "}
             ha
           </p>
         </div>
 
-        <div className={styles.statCard}>
+        <div className="stat-card-dashboard">
           <h3>Số điểm quan trắc</h3>
-          <p className={styles.statValue}>
+          <p className="stat-value-dashboard">
             {dashboardData?.monitoring?.length || 0}
           </p>
         </div>
 
-        <div className={styles.statCard}>
+        <div className="stat-card-dashboard">
           <h3>Kế hoạch quy hoạch</h3>
-          <p className={styles.statValue}>
+          <p className="stat-value-dashboard">
             {dashboardData?.planning?.length || 0}
           </p>
         </div>
       </div>
 
-      <div className={`${styles.chartsGrid} chartsGrid`} data-tour="chartsGrid">
-        <div className={styles.chartCard}>
+      <div className="charts-grid-dashboard">
+        <div className="chart-card-dashboard">
           <h3>Diện tích theo loại rừng</h3>
-          <Bar
-            data={forestAreaData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "bottom",
-                },
-              },
-            }}
-          />
+          <div className="chart-container-dashboard">
+            {hasAreaData ? (
+              <Bar
+                data={forestAreaData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <EmptyChart
+                icon={FaChartBar}
+                message="Chưa có dữ liệu diện tích rừng"
+              />
+            )}
+          </div>
         </div>
 
-        <div className={styles.chartCard}>
+        <div className="chart-card-dashboard">
           <h3>Chất lượng rừng</h3>
-          <Doughnut
-            data={forestQualityData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "bottom",
-                },
-              },
-            }}
-          />
+          <div className="chart-container-dashboard">
+            {hasQualityData ? (
+              <Doughnut
+                data={forestQualityData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <EmptyChart
+                icon={FaChartPie}
+                message="Chưa có dữ liệu chất lượng rừng"
+              />
+            )}
+          </div>
         </div>
 
-        <div className={styles.chartCard}>
+        <div className="chart-card-dashboard">
           <h3>Chỉ số phát triển rừng theo năm</h3>
-          <Line
-            data={forestIndicesData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "bottom",
-                },
-              },
-            }}
-          />
+          <div className="chart-container-dashboard">
+            {hasIndicesData ? (
+              <Line
+                data={forestIndicesData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: "Giá trị",
+                      },
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <EmptyChart
+                icon={FaChartLine}
+                message="Chưa có dữ liệu chỉ số phát triển"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { VscEye, VscEyeClosed } from "react-icons/vsc";
 import { useLocation, useNavigate } from "react-router-dom";
 import logo from "../../assets/Logo/icon.png";
 import { useAuth } from "../../context/AuthContext";
-import styles from "./Login.module.css";
+import "./Login.css";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -74,56 +74,60 @@ const Login = () => {
   };
 
   return (
-    <div className={styles.loginContainer}>
-      <div className={styles.forestBackground}></div>
-      <div className={styles.loginBox}>
-        <div className={styles.logoContainer}>
-          <FaTree className={styles.logo} />
+    <div className="login-container">
+      <div className="login-forest-background"></div>
+      <div className="login-box">
+        <div className="login-logo-container">
+          <FaTree className="login-logo" />
         </div>
 
-        <div className={styles.titleContainer}>
-          <h1 className={styles.title}>Hệ thống quản lý rừng</h1>
-          <h2 className={styles.subtitle}>Đăng nhập quản trị</h2>
+        <div className="login-title-container">
+          <h1 className="login-title">Hệ thống quản lý rừng</h1>
+          <h2 className="login-subtitle">Đăng nhập quản trị</h2>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.formGroup}>
-            <div className={styles.inputWrapper}>
-              <FaUser className={styles.inputIcon} aria-hidden="true" />
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="login-form-group">
+            <div className="login-input-wrapper">
+              <FaUser className="login-input-icon" aria-hidden="true" />
               <input
                 type="text"
                 id="username"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                className={errors.username ? styles.errorInput : ""}
+                className={`login-input ${
+                  errors.username ? "login-error-input" : ""
+                }`}
                 placeholder="Nhập tên đăng nhập"
                 autoComplete="username"
                 disabled={isSubmitting}
               />
             </div>
             {errors.username && (
-              <span className={styles.errorMessage}>{errors.username}</span>
+              <span className="login-error-message">{errors.username}</span>
             )}
           </div>
 
-          <div className={styles.formGroup}>
-            <div className={styles.inputWrapper}>
-              <FaLock className={styles.inputIcon} aria-hidden="true" />
+          <div className="login-form-group">
+            <div className="login-input-wrapper">
+              <FaLock className="login-input-icon" aria-hidden="true" />
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className={errors.password ? styles.errorInput : ""}
+                className={`login-input ${
+                  errors.password ? "login-error-input" : ""
+                }`}
                 placeholder="Nhập mật khẩu"
                 autoComplete="current-password"
                 disabled={isSubmitting}
               />
               <button
                 type="button"
-                className={styles.showPasswordButton}
+                className="login-show-password-button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 disabled={isSubmitting}
@@ -132,29 +136,25 @@ const Login = () => {
               </button>
             </div>
             {errors.password && (
-              <span className={styles.errorMessage}>{errors.password}</span>
+              <span className="login-error-message">{errors.password}</span>
             )}
           </div>
 
-          {authError && <div className={styles.authError}>{authError}</div>}
+          {authError && <div className="login-auth-error">{authError}</div>}
 
           <button
             type="submit"
-            className={`${styles.loginButton} ${
-              isSubmitting ? styles.loading : ""
-            }`}
+            className={`login-button ${isSubmitting ? "loading" : ""}`}
             disabled={isSubmitting}
           >
             {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
       </div>
-      <footer className={styles.footer}>
-        <div className={styles.footerContent}>
-          <img src={logo} alt="Logo Kiểm lâm" className={styles.footerLogo} />
-          <p className={styles.footerText}>
-            @2025 - Chi cục Kiểm lâm Hải Phòng
-          </p>
+      <footer className="footer-login">
+        <div className="footer-loginContent">
+          <img src={logo} alt="Logo Kiểm lâm" className="footer-loginLogo" />
+          <p className="footer-loginText">@2025 - Chi cục Kiểm lâm Hải Phòng</p>
         </div>
       </footer>
     </div>

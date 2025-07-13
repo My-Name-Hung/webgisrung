@@ -11,7 +11,7 @@ import {
   FaUserShield,
 } from "react-icons/fa";
 import { VscEye, VscEyeClosed } from "react-icons/vsc";
-import styles from "./UserModal.module.css";
+import "./UserModal.css";
 
 const UserModal = ({
   isOpen,
@@ -172,44 +172,43 @@ const UserModal = ({
     const isEditing = editingField === field;
 
     return (
-      <div className={styles.infoItem}>
-        <div className={styles.infoLabel}>
+      <div className="user-modal-info-item">
+        <div className="user-modal-info-label">
           {icon}
           <label>{label}</label>
         </div>
-        <div className={styles.infoValue}>
+        <div className="user-modal-info-value">
           {isEditing ? (
-            <div className={styles.editForm}>
+            <div className="user-modal-edit-form">
               <input
                 type="text"
                 value={value}
                 onChange={(e) => handleFieldChange(e, field)}
-                className={styles.editInput}
+                className="user-modal-edit-input"
                 placeholder={`Nhập ${label.toLowerCase()}`}
               />
-              <div className={styles.editActions}>
+              <div className="user-modal-edit-actions">
                 <button
                   onClick={() => handleUpdateField(field)}
-                  className={styles.saveButton}
+                  className="user-modal-save-button"
                   disabled={isLoading}
                 >
                   {isLoading ? "Đang lưu..." : "Lưu"}
                 </button>
                 <button
                   onClick={() => setEditingField(null)}
-                  className={styles.cancelButton}
+                  className="user-modal-cancel-button"
                 >
                   Hủy
                 </button>
               </div>
             </div>
           ) : (
-            <div className={styles.valueWithEdit}>
+            <div className="user-modal-value-with-edit">
               <span>{value}</span>
               <button
-                className={styles.editButton}
                 onClick={() => setEditingField(field)}
-                title={`Chỉnh sửa ${label.toLowerCase()}`}
+                className="user-modal-edit-button"
               >
                 <CiEdit />
               </button>
@@ -221,56 +220,40 @@ const UserModal = ({
   };
 
   return (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div
-        className={styles.modalContent}
-        onClick={(e) => e.stopPropagation()}
-        data-tour="modalContent"
-      >
-        <button
-          className={styles.closeButton}
-          onClick={onClose}
-          title="Đóng"
-          aria-label="Đóng modal"
-        >
+    <div className="user-modal-overlay">
+      <div className="user-modal-content">
+        <button onClick={onClose} className="user-modal-close-button">
           <FaTimes />
         </button>
-        <div className={styles.modalHeader}>
-          <h2>Thông tin người dùng</h2>
-          <label
-            className={styles.themeSwitch}
-            title={
-              isDarkMode
-                ? "Chuyển sang giao diện sáng"
-                : "Chuyển sang giao diện tối"
-            }
-            data-tour="themeSwitch"
-          >
-            <input
-              type="checkbox"
-              checked={isDarkMode}
-              onChange={onToggleTheme}
-              className={styles.themeSwitchInput}
-            />
-            <span className={styles.themeSwitchSlider}>
-              <FaSun className={styles.sunIcon} />
-              <FaMoon className={styles.moonIcon} />
-            </span>
-          </label>
+
+        <div className="user-modal-header">
+          <h2>Thông tin tài khoản</h2>
+          <div className="user-modal-header-actions">
+            <label className="user-modal-theme-switch">
+              <input
+                type="checkbox"
+                checked={isDarkMode}
+                onChange={onToggleTheme}
+                className="user-modal-theme-switch-input"
+              />
+              <span className="user-modal-theme-switch-slider">
+                <FaSun className="user-modal-sun-icon" />
+                <FaMoon className="user-modal-moon-icon" />
+              </span>
+            </label>
+          </div>
         </div>
 
-        <div className={styles.tabs} data-tour="userTabs">
+        <div className="user-modal-tabs">
           <button
-            className={`${styles.tab} ${
-              activeTab === "info" ? styles.active : ""
-            }`}
+            className={`user-modal-tab ${activeTab === "info" ? "active" : ""}`}
             onClick={() => setActiveTab("info")}
           >
             Thông tin
           </button>
           <button
-            className={`${styles.tab} ${
-              activeTab === "password" ? styles.active : ""
+            className={`user-modal-tab ${
+              activeTab === "password" ? "active" : ""
             }`}
             onClick={() => setActiveTab("password")}
           >
@@ -278,68 +261,42 @@ const UserModal = ({
           </button>
         </div>
 
-        <div className={styles.tabContent}>
+        <div className="user-modal-tab-content">
           {activeTab === "info" ? (
-            <div className={styles.userInfo} data-tour="userInfo">
+            <div className="user-modal-info">
               {renderEditableField(
                 "username",
                 username,
                 "Tên đăng nhập",
-                <FaUser className={styles.infoIcon} />
+                <FaUser />
               )}
-              {renderEditableField(
-                "email",
-                email,
-                "Email",
-                <FaEnvelope className={styles.infoIcon} />
-              )}
-              <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>
-                  <FaUserShield className={styles.infoIcon} />
+              {renderEditableField("email", email, "Email", <FaEnvelope />)}
+              <div className="user-modal-info-item">
+                <div className="user-modal-info-label">
+                  <FaUserShield />
                   <label>Vai trò</label>
                 </div>
-                <span>{admin?.role || "Quản trị viên"}</span>
+                <div className="user-modal-info-value">
+                  <span>Quản trị viên</span>
+                </div>
               </div>
-              {error && <div className={styles.error}>{error}</div>}
-              {success && <div className={styles.success}>{success}</div>}
-              <button
-                className={styles.logoutButton}
-                onClick={onLogout}
-                title="Đăng xuất khỏi hệ thống"
-              >
-                <FaSignOutAlt />
-                <span>Đăng xuất</span>
-              </button>
             </div>
           ) : (
-            <form
-              onSubmit={handleSubmit}
-              className={styles.passwordForm}
-              data-tour="passwordForm"
-            >
-              {error && <div className={styles.error}>{error}</div>}
-              {success && <div className={styles.success}>{success}</div>}
-
-              <div className={styles.formGroup}>
-                <label htmlFor="currentPassword">Mật khẩu hiện tại</label>
-                <div className={styles.passwordInput}>
+            <form onSubmit={handleSubmit} className="user-modal-password-form">
+              <div className="user-modal-form-group">
+                <label>Mật khẩu hiện tại</label>
+                <div className="user-modal-password-input">
                   <input
                     type={showPasswords.currentPassword ? "text" : "password"}
-                    id="currentPassword"
                     name="currentPassword"
                     value={passwords.currentPassword}
                     onChange={handlePasswordChange}
-                    required
+                    placeholder="Nhập mật khẩu hiện tại"
                   />
                   <button
                     type="button"
-                    className={styles.togglePassword}
                     onClick={() => togglePasswordVisibility("currentPassword")}
-                    title={
-                      showPasswords.currentPassword
-                        ? "Ẩn mật khẩu"
-                        : "Hiện mật khẩu"
-                    }
+                    className="user-modal-toggle-password"
                   >
                     {showPasswords.currentPassword ? (
                       <VscEyeClosed />
@@ -350,52 +307,40 @@ const UserModal = ({
                 </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label htmlFor="newPassword">Mật khẩu mới</label>
-                <div className={styles.passwordInput}>
+              <div className="user-modal-form-group">
+                <label>Mật khẩu mới</label>
+                <div className="user-modal-password-input">
                   <input
                     type={showPasswords.newPassword ? "text" : "password"}
-                    id="newPassword"
                     name="newPassword"
                     value={passwords.newPassword}
                     onChange={handlePasswordChange}
-                    required
+                    placeholder="Nhập mật khẩu mới"
                   />
                   <button
                     type="button"
-                    className={styles.togglePassword}
                     onClick={() => togglePasswordVisibility("newPassword")}
-                    title={
-                      showPasswords.newPassword
-                        ? "Ẩn mật khẩu"
-                        : "Hiện mật khẩu"
-                    }
+                    className="user-modal-toggle-password"
                   >
                     {showPasswords.newPassword ? <VscEyeClosed /> : <VscEye />}
                   </button>
                 </div>
               </div>
 
-              <div className={styles.formGroup}>
-                <label htmlFor="confirmPassword">Xác nhận mật khẩu mới</label>
-                <div className={styles.passwordInput}>
+              <div className="user-modal-form-group">
+                <label>Xác nhận mật khẩu mới</label>
+                <div className="user-modal-password-input">
                   <input
                     type={showPasswords.confirmPassword ? "text" : "password"}
-                    id="confirmPassword"
                     name="confirmPassword"
                     value={passwords.confirmPassword}
                     onChange={handlePasswordChange}
-                    required
+                    placeholder="Nhập lại mật khẩu mới"
                   />
                   <button
                     type="button"
-                    className={styles.togglePassword}
                     onClick={() => togglePasswordVisibility("confirmPassword")}
-                    title={
-                      showPasswords.confirmPassword
-                        ? "Ẩn mật khẩu"
-                        : "Hiện mật khẩu"
-                    }
+                    className="user-modal-toggle-password"
                   >
                     {showPasswords.confirmPassword ? (
                       <VscEyeClosed />
@@ -408,14 +353,22 @@ const UserModal = ({
 
               <button
                 type="submit"
-                className={styles.submitButton}
+                className="user-modal-submit-button"
                 disabled={isLoading}
               >
-                {isLoading ? "Đang xử lý..." : "Cập nhật mật khẩu"}
+                {isLoading ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
               </button>
             </form>
           )}
+
+          {error && <div className="user-modal-error">{error}</div>}
+          {success && <div className="user-modal-success">{success}</div>}
         </div>
+
+        <button onClick={onLogout} className="user-modal-logout-button">
+          <FaSignOutAlt />
+          Đăng xuất
+        </button>
       </div>
     </div>
   );
