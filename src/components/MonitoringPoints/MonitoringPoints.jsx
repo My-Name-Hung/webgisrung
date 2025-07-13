@@ -2,6 +2,7 @@ import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import React, { useEffect, useRef, useState } from "react";
+import { FaMapMarkedAlt, FaTrash } from "react-icons/fa";
 import { monitoringSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import "./MonitoringPoints.css";
@@ -13,7 +14,7 @@ const MonitoringPoints = () => {
     status: "",
     coordinates: {
       type: "Point",
-      coordinates: [0, 0],
+      coordinates: [0, 0], // [longitude, latitude]
     },
   });
   const [previewData, setPreviewData] = useState(null);
@@ -72,16 +73,29 @@ const MonitoringPoints = () => {
     const popupContent = document.createElement("div");
     popupContent.className = "map-marker-popup";
     popupContent.innerHTML = `
-      <div>Vĩ độ: ${lat.toFixed(6)}</div>
-      <div>Kinh độ: ${lng.toFixed(6)}</div>
-      <button>Sử dụng tọa độ này</button>
+      <div class="popup-coordinates">
+        <div class="popup-coordinate">
+          <span class="popup-label">Vĩ độ:</span>
+          <span class="popup-value">${lat.toFixed(6)}</span>
+        </div>
+        <div class="popup-coordinate">
+          <span class="popup-label">Kinh độ:</span>
+          <span class="popup-value">${lng.toFixed(6)}</span>
+        </div>
+      </div>
+      <button class="popup-button">Sử dụng tọa độ này</button>
     `;
 
     // Add click handler to popup button
     const button = popupContent.querySelector("button");
     button.onclick = () => {
-      handleCoordinateChange("longitude", lng);
-      handleCoordinateChange("latitude", lat);
+      setFormData((prev) => ({
+        ...prev,
+        coordinates: {
+          type: "Point",
+          coordinates: [lng, lat], // [longitude, latitude]
+        },
+      }));
       if (popupRef.current) {
         popupRef.current.close();
       }
@@ -99,51 +113,49 @@ const MonitoringPoints = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const newFormData = {
-      ...formData,
-      [name]: value,
-    };
-    setFormData(newFormData);
 
-    // Update preview data if all required fields are filled
-    if (
-      Object.values(newFormData).every((v) => v !== "") &&
-      newFormData.coordinates.coordinates.every((c) => c !== 0)
-    ) {
-      setPreviewData(newFormData);
-    }
-  };
+    if (name === "longitude" || name === "latitude") {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        const newCoordinates = [...formData.coordinates.coordinates];
+        if (name === "longitude") {
+          newCoordinates[0] = numValue;
+        } else {
+          newCoordinates[1] = numValue;
+        }
 
-  const handleCoordinateChange = (type, value) => {
-    const index = type === "longitude" ? 0 : 1;
-    const newCoordinates = [...formData.coordinates.coordinates];
-    newCoordinates[index] = parseFloat(value);
+        setFormData((prev) => ({
+          ...prev,
+          coordinates: {
+            ...prev.coordinates,
+            coordinates: newCoordinates,
+          },
+        }));
 
-    const newFormData = {
-      ...formData,
-      coordinates: {
-        ...formData.coordinates,
-        coordinates: newCoordinates,
-      },
-    };
-    setFormData(newFormData);
-
-    // Update marker on map
-    if (leafletMap.current) {
-      if (markerRef.current) {
-        markerRef.current.remove();
+        // Update marker on map
+        if (leafletMap.current) {
+          if (markerRef.current) {
+            markerRef.current.remove();
+          }
+          markerRef.current = L.marker([
+            newCoordinates[1],
+            newCoordinates[0],
+          ]).addTo(leafletMap.current);
+          leafletMap.current.setView(
+            [newCoordinates[1], newCoordinates[0]],
+            leafletMap.current.getZoom()
+          );
+        }
       }
-      markerRef.current = L.marker([
-        newCoordinates[1],
-        newCoordinates[0],
-      ]).addTo(leafletMap.current);
-      leafletMap.current.setView(
-        [newCoordinates[1], newCoordinates[0]],
-        leafletMap.current.getZoom()
-      );
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
 
     // Update preview data if all required fields are filled
+    const newFormData = { ...formData, [name]: value };
     if (
       Object.values(newFormData).every((v) => v !== "") &&
       newFormData.coordinates.coordinates.every((c) => c !== 0)
@@ -251,40 +263,44 @@ const MonitoringPoints = () => {
             </select>
           </div>
 
-          <div className="coordinates-monitoringpoints">
+          <div className="coordinates-section-monitoringpoints">
             <div className="coordinates-hint">
               Click vào bản đồ để chọn tọa độ hoặc nhập trực tiếp
             </div>
-            <div className="form-group-monitoringpoints">
-              <label htmlFor="longitude">Kinh độ</label>
-              <input
-                type="number"
-                id="longitude"
-                name="longitude"
-                value={formData.coordinates.coordinates[0]}
-                onChange={(e) =>
-                  handleCoordinateChange("longitude", e.target.value)
-                }
-                className="input-monitoringpoints"
-                step="any"
-                required
-              />
-            </div>
+            <div className="coordinates-inputs">
+              <div className="form-group-monitoringpoints">
+                <label htmlFor="longitude">Kinh độ</label>
+                <input
+                  type="number"
+                  id="longitude"
+                  name="longitude"
+                  value={formData.coordinates.coordinates[0] || ""}
+                  onChange={handleInputChange}
+                  className="input-monitoringpoints"
+                  step="0.000001"
+                  min="-180"
+                  max="180"
+                  placeholder="Ví dụ: 106.68383"
+                  required
+                />
+              </div>
 
-            <div className="form-group-monitoringpoints">
-              <label htmlFor="latitude">Vĩ độ</label>
-              <input
-                type="number"
-                id="latitude"
-                name="latitude"
-                value={formData.coordinates.coordinates[1]}
-                onChange={(e) =>
-                  handleCoordinateChange("latitude", e.target.value)
-                }
-                className="input-monitoringpoints"
-                step="any"
-                required
-              />
+              <div className="form-group-monitoringpoints">
+                <label htmlFor="latitude">Vĩ độ</label>
+                <input
+                  type="number"
+                  id="latitude"
+                  name="latitude"
+                  value={formData.coordinates.coordinates[1] || ""}
+                  onChange={handleInputChange}
+                  className="input-monitoringpoints"
+                  step="0.000001"
+                  min="-90"
+                  max="90"
+                  placeholder="Ví dụ: 20.865139"
+                  required
+                />
+              </div>
             </div>
           </div>
 
@@ -301,7 +317,50 @@ const MonitoringPoints = () => {
       <div className="preview-section-monitoringpoints">
         <h2>Xem trước điểm quan trắc</h2>
 
-        <div className="preview-map-monitoringpoints" ref={mapRef}></div>
+        <div className="preview-map-monitoringpoints" ref={mapRef}>
+          <div
+            className="map-controls-monitoringpoints"
+            onClick={(e) => e.stopPropagation()} // Prevent map click
+          >
+            <button
+              className="map-control-button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (markerRef.current) {
+                  const bounds = L.latLngBounds([
+                    markerRef.current.getLatLng(),
+                  ]);
+                  leafletMap.current.fitBounds(bounds, { padding: [50, 50] });
+                }
+              }}
+              title="Căn chỉnh"
+            >
+              <FaMapMarkedAlt />
+            </button>
+            <button
+              className="map-control-button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (markerRef.current) {
+                  markerRef.current.remove();
+                  markerRef.current = null;
+                  setFormData((prev) => ({
+                    ...prev,
+                    coordinates: {
+                      type: "Point",
+                      coordinates: [0, 0],
+                    },
+                  }));
+                }
+              }}
+              title="Xóa điểm"
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
 
         {previewData && (
           <div className="preview-card-monitoringpoints">
@@ -321,15 +380,29 @@ const MonitoringPoints = () => {
                 <span className="preview-detail-label-monitoringpoints">
                   Trạng thái
                 </span>
-                <span className="preview-detail-value-monitoringpoints">
+                <span
+                  className={`preview-status-monitoringpoints ${previewData.status
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
+                >
                   {previewData.status}
                 </span>
               </div>
             </div>
 
             <div className="preview-coordinates-monitoringpoints">
-              [{previewData.coordinates.coordinates[0].toFixed(6)},{" "}
-              {previewData.coordinates.coordinates[1].toFixed(6)}]
+              <div className="preview-coordinate">
+                <span className="preview-coordinate-label">Kinh độ:</span>
+                <span className="preview-coordinate-value">
+                  {previewData.coordinates.coordinates[0].toFixed(6)}
+                </span>
+              </div>
+              <div className="preview-coordinate">
+                <span className="preview-coordinate-label">Vĩ độ:</span>
+                <span className="preview-coordinate-value">
+                  {previewData.coordinates.coordinates[1].toFixed(6)}
+                </span>
+              </div>
             </div>
           </div>
         )}

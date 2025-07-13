@@ -1,6 +1,6 @@
-const express = require("express");
-const auth = require("../middleware/auth");
-const { GeoJSON } = require("../models/ForestData");
+import express from "express";
+import auth from "../middleware/auth.js";
+import { GeoJSONMap } from "../models/ForestData.js";
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.use(auth);
 // Get all GeoJSON data
 router.get("/", async (req, res) => {
   try {
-    const geojsonData = await GeoJSON.find();
+    const geojsonData = await GeoJSONMap.find();
     res.json(geojsonData);
   } catch (error) {
     res.status(500).json({ message: "Error fetching GeoJSON data" });
@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
 // Get specific GeoJSON by name
 router.get("/:name", async (req, res) => {
   try {
-    const geojson = await GeoJSON.findOne({ name: req.params.name });
+    const geojson = await GeoJSONMap.findOne({ name: req.params.name });
     if (!geojson) {
       return res.status(404).json({ message: "GeoJSON not found" });
     }
@@ -40,7 +40,7 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Invalid GeoJSON format" });
     }
 
-    const newGeoJSON = new GeoJSON({
+    const newGeoJSON = new GeoJSONMap({
       name,
       type,
       data,
@@ -63,7 +63,7 @@ router.put("/:name", async (req, res) => {
       return res.status(400).json({ message: "Invalid GeoJSON format" });
     }
 
-    const geojson = await GeoJSON.findOneAndUpdate(
+    const geojson = await GeoJSONMap.findOneAndUpdate(
       { name: req.params.name },
       { data, uploadDate: Date.now() },
       { new: true }
@@ -82,7 +82,9 @@ router.put("/:name", async (req, res) => {
 // Delete GeoJSON
 router.delete("/:name", async (req, res) => {
   try {
-    const geojson = await GeoJSON.findOneAndDelete({ name: req.params.name });
+    const geojson = await GeoJSONMap.findOneAndDelete({
+      name: req.params.name,
+    });
     if (!geojson) {
       return res.status(404).json({ message: "GeoJSON not found" });
     }
@@ -92,4 +94,4 @@ router.delete("/:name", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

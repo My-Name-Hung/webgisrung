@@ -1,6 +1,6 @@
-const express = require("express");
-const auth = require("../middleware/auth");
-const { MonitoringPoint } = require("../models/ForestData");
+import express from "express";
+import auth from "../middleware/auth.js";
+import { MonitoringPoint } from "../models/ForestData.js";
 
 const router = express.Router();
 
@@ -58,4 +58,4 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

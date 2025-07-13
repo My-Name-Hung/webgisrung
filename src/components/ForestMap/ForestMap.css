@@ -52,7 +52,6 @@
   box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
   border: 1px solid rgba(45, 90, 39, 0.1);
   backdrop-filter: blur(10px);
-  height: calc(100vh - 160px);
   display: flex;
   flex-direction: column;
 }

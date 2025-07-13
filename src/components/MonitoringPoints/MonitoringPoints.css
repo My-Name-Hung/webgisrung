@@ -4,6 +4,7 @@
   grid-template-columns: 400px 1fr;
   gap: var(--spacing-xl);
   min-height: calc(100vh - 80px);
+  overflow: hidden;
 }
 
 .title-monitoringpoints {
@@ -51,7 +52,6 @@
   box-shadow: 0 4px 6px rgba(45, 90, 39, 0.1);
   border: 1px solid rgba(45, 90, 39, 0.1);
   backdrop-filter: blur(10px);
-  height: calc(100vh - 160px);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -107,50 +107,91 @@
 .input-monitoringpoints:focus {
   border-color: #2d5a27;
   box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1);
+  outline: none;
 }
 
-.coordinates-monitoringpoints {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-lg);
+.coordinates-section-monitoringpoints {
+  background-color: rgba(45, 90, 39, 0.05);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
   position: relative;
+  margin: var(--spacing-md) 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .coordinates-hint {
   position: absolute;
-  top: -24px;
-  left: 0;
-  right: 0;
-  text-align: center;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #fff;
+  padding: 0 var(--spacing-sm);
   color: #2d5a27;
   font-size: 0.9em;
-  opacity: 0.8;
-  font-style: italic;
+  white-space: nowrap;
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 1px 2px rgba(45, 90, 39, 0.1);
 }
 
-.map-marker-popup {
-  padding: 8px 12px;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-size: 0.9em;
-  color: #2d5a27;
-}
-
-.map-marker-popup button {
-  margin-top: 8px;
-  padding: 4px 8px;
-  background: #2d5a27;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8em;
+.coordinates-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
   width: 100%;
 }
 
-.map-marker-popup button:hover {
+.coordinates-inputs .form-group-monitoringpoints {
+  margin: 0;
+  width: 100%;
+}
+
+.coordinates-inputs .input-monitoringpoints {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.map-marker-popup {
+  padding: var(--spacing-sm) var(--spacing-md);
+  min-width: 200px;
+}
+
+.popup-coordinates {
+  margin-bottom: var(--spacing-sm);
+}
+
+.popup-coordinate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.popup-label {
+  color: #2d5a27;
+  font-weight: 500;
+}
+
+.popup-value {
+  font-family: monospace;
+  color: #1a472a;
+}
+
+.popup-button {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background: #2d5a27;
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.popup-button:hover {
   background: #1a472a;
+  transform: translateY(-1px);
 }
 
 .submit-button-monitoringpoints {
@@ -179,10 +220,57 @@
   border-radius: var(--border-radius-md);
   overflow: hidden;
   position: relative;
-  background-color: rgba(255, 255, 255, 0.5);
   border: 2px solid rgba(45, 90, 39, 0.2);
   box-shadow: 0 4px 12px rgba(45, 90, 39, 0.1);
   margin-bottom: var(--spacing-lg);
+  height: 600px;
+}
+
+.map-controls-monitoringpoints {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  z-index: 1010;
+  display: flex;
+  gap: var(--spacing-sm);
+  background: white;
+  padding: 4px;
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.map-control-button {
+  background: white;
+  border: 1px solid rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  position: relative;
+  z-index: 1011;
+}
+
+.map-control-button:hover {
+  background: #f0f9ff;
+  border-color: #2d5a27;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(45, 90, 39, 0.2);
+}
+
+.map-control-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.map-control-button svg {
+  width: 16px;
+  height: 16px;
+  color: #2d5a27;
 }
 
 .preview-card-monitoringpoints {
@@ -222,13 +310,56 @@
   font-size: var(--font-size-md);
 }
 
+.preview-status-monitoringpoints {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.preview-status-monitoringpoints.hoạt-động {
+  background-color: rgba(72, 187, 120, 0.1);
+  color: #2f855a;
+}
+
+.preview-status-monitoringpoints.tạm-dừng {
+  background-color: rgba(246, 173, 85, 0.1);
+  color: #c05621;
+}
+
+.preview-status-monitoringpoints.ngưng-hoạt-động {
+  background-color: rgba(245, 101, 101, 0.1);
+  color: #c53030;
+}
+
 .preview-coordinates-monitoringpoints {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-md);
   background-color: rgba(45, 90, 39, 0.05);
   border-radius: var(--border-radius-sm);
+}
+
+.preview-coordinate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.preview-coordinate:last-child {
+  margin-bottom: 0;
+}
+
+.preview-coordinate-label {
+  color: rgba(45, 90, 39, 0.8);
+  font-weight: 500;
+}
+
+.preview-coordinate-value {
   font-family: monospace;
   color: #2d5a27;
+  font-size: var(--font-size-md);
 }
 
 .error-monitoringpoints {
@@ -273,6 +404,21 @@
 }
 
 @media (max-width: 768px) {
+  .coordinates-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .coordinates-hint {
+    font-size: 0.8em;
+    white-space: normal;
+    text-align: center;
+    width: 90%;
+  }
+
+  .preview-details-monitoringpoints {
+    grid-template-columns: 1fr;
+  }
+
   .preview-map-monitoringpoints {
     height: 500px;
   }

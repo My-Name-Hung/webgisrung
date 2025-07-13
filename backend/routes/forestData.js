@@ -1,6 +1,5 @@
 import express from "express";
 import auth from "../middleware/auth.js";
-import ForestData from "../models/ForestData.js";
 
 const router = express.Router();
 
@@ -11,7 +10,7 @@ router.get("/", auth, async (req, res) => {
 
     // Filter by forest type
     if (req.query.forestType) {
-      query.forestType = req.query.forestType;
+      query.type = req.query.forestType;
     }
 
     // Filter by status
@@ -19,17 +18,12 @@ router.get("/", auth, async (req, res) => {
       query.status = req.query.status;
     }
 
-    // Filter by planning status
-    if (req.query.planningStatus) {
-      query.planningStatus = req.query.planningStatus;
-    }
-
-    const forestData = await ForestData.find(query)
-      .sort({ lastUpdated: -1 })
+    const forestData = await GeoJSONMap.find(query)
+      .sort({ createdAt: -1 })
       .limit(parseInt(req.query.limit) || 10)
       .skip(parseInt(req.query.skip) || 0);
 
-    const total = await ForestData.countDocuments(query);
+    const total = await GeoJSONMap.countDocuments(query);
 
     res.json({
       success: true,
@@ -53,7 +47,7 @@ router.get("/", auth, async (req, res) => {
 // Get forest data by ID
 router.get("/:id", auth, async (req, res) => {
   try {
-    const forestData = await ForestData.findById(req.params.id);
+    const forestData = await GeoJSONMap.findById(req.params.id);
 
     if (!forestData) {
       return res.status(404).json({
@@ -78,7 +72,7 @@ router.get("/:id", auth, async (req, res) => {
 // Create new forest data
 router.post("/", auth, async (req, res) => {
   try {
-    const forestData = new ForestData(req.body);
+    const forestData = new GeoJSONMap(req.body);
     await forestData.save();
 
     res.status(201).json({
@@ -99,18 +93,7 @@ router.post("/", auth, async (req, res) => {
 router.patch("/:id", auth, async (req, res) => {
   try {
     const updates = Object.keys(req.body);
-    const allowedUpdates = [
-      "name",
-      "location",
-      "area",
-      "forestType",
-      "monitoringPoints",
-      "indices",
-      "status",
-      "planningStatus",
-      "notes",
-      "attachments",
-    ];
+    const allowedUpdates = ["name", "type", "data"];
 
     const isValidOperation = updates.every((update) =>
       allowedUpdates.includes(update)
@@ -123,7 +106,7 @@ router.patch("/:id", auth, async (req, res) => {
       });
     }
 
-    const forestData = await ForestData.findById(req.params.id);
+    const forestData = await GeoJSONMap.findById(req.params.id);
 
     if (!forestData) {
       return res.status(404).json({
@@ -136,7 +119,6 @@ router.patch("/:id", auth, async (req, res) => {
       forestData[update] = req.body[update];
     });
 
-    forestData.lastUpdated = new Date();
     await forestData.save();
 
     res.json({
@@ -156,7 +138,7 @@ router.patch("/:id", auth, async (req, res) => {
 // Delete forest data
 router.delete("/:id", auth, async (req, res) => {
   try {
-    const forestData = await ForestData.findByIdAndDelete(req.params.id);
+    const forestData = await GeoJSONMap.findByIdAndDelete(req.params.id);
 
     if (!forestData) {
       return res.status(404).json({
@@ -183,8 +165,8 @@ router.post("/within", auth, async (req, res) => {
   try {
     const { polygon } = req.body;
 
-    const forestData = await ForestData.find({
-      location: {
+    const forestData = await GeoJSONMap.find({
+      "data.geometry": {
         $geoWithin: {
           $geometry: {
             type: "Polygon",
