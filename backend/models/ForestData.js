@@ -141,25 +141,63 @@ const monitoringPointSchema = new mongoose.Schema({
 const geoJSONMapSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, "Tên bản đồ không được để trống"],
+    trim: true,
   },
   type: {
     type: String,
-    required: true,
-    enum: ["Hiện trạng", "Quy hoạch", "Điểm quan trắc"],
+    required: [true, "Loại bản đồ không được để trống"],
+    enum: ["Hiện trạng", "Quy hoạch", "Điểm quan trắc", "Đa dạng sinh học"],
   },
   data: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true,
+    type: {
+      type: String,
+      required: true,
+      enum: ["FeatureCollection"],
+    },
+    features: [
+      {
+        type: {
+          type: String,
+          required: true,
+          enum: ["Feature"],
+        },
+        geometry: {
+          type: {
+            type: String,
+            required: true,
+            enum: ["Point", "LineString", "Polygon", "MultiPolygon"],
+          },
+          coordinates: {
+            type: Array,
+            required: true,
+          },
+        },
+        properties: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          default: new Map(),
+        },
+      },
+    ],
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  updatedAt: {
+    type: Date,
+  },
 });
 
-// Create indexes for geospatial queries
-monitoringPointSchema.index({ coordinates: "2dsphere" });
+// Middleware to update the updatedAt field on save
+geoJSONMapSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Add index for geospatial queries
+geoJSONMapSchema.index({ "data.features.geometry": "2dsphere" });
 
 // Create models
 const ForestStatus = mongoose.model("ForestStatus", forestStatusSchema);
