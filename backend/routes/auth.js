@@ -13,7 +13,10 @@ router.post("/register", verifyToken, async (req, res) => {
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ username });
     if (existingAdmin) {
-      return res.status(400).json({ message: "Tên đăng nhập đã được sử dụng" });
+      return res.status(400).json({
+        success: false,
+        message: "Tên đăng nhập đã được sử dụng",
+      });
     }
 
     // Create new admin
@@ -24,11 +27,16 @@ router.post("/register", verifyToken, async (req, res) => {
     });
 
     await admin.save();
-    res.status(201).json({ message: "Tạo tài khoản thành công" });
+    res.status(201).json({
+      success: true,
+      message: "Tạo tài khoản thành công",
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Không thể tạo tài khoản", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Không thể tạo tài khoản",
+      error: error.message,
+    });
   }
 });
 
@@ -40,17 +48,19 @@ router.post("/login", async (req, res) => {
     // Find admin by username
     const admin = await Admin.findOne({ username });
     if (!admin) {
-      return res
-        .status(401)
-        .json({ message: "Tên đăng nhập hoặc mật khẩu không đúng" });
+      return res.status(401).json({
+        success: false,
+        message: "Tên đăng nhập hoặc mật khẩu không đúng",
+      });
     }
 
     // Check password
     const isMatch = await admin.comparePassword(password);
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({ message: "Tên đăng nhập hoặc mật khẩu không đúng" });
+      return res.status(401).json({
+        success: false,
+        message: "Tên đăng nhập hoặc mật khẩu không đúng",
+      });
     }
 
     // Generate JWT token
@@ -66,6 +76,7 @@ router.post("/login", async (req, res) => {
     admin.lastLogin = new Date();
     await admin.save();
 
+    // Return response with token and admin info directly
     res.json({
       token,
       admin: {
@@ -76,7 +87,12 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi đăng nhập", error: error.message });
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi đăng nhập",
+      error: error.message,
+    });
   }
 });
 
@@ -85,13 +101,21 @@ router.get("/me", verifyToken, async (req, res) => {
   try {
     const admin = await Admin.findById(req.admin._id).select("-password");
     if (!admin) {
-      return res.status(404).json({ message: "Không tìm thấy admin" });
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy admin",
+      });
     }
-    res.json(admin);
+    res.json({
+      success: true,
+      data: admin,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Không thể lấy thông tin admin", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Không thể lấy thông tin admin",
+      error: error.message,
+    });
   }
 });
 
@@ -108,19 +132,25 @@ router.put("/profile", verifyToken, async (req, res) => {
     if (currentPassword && newPassword) {
       const isMatch = await admin.comparePassword(currentPassword);
       if (!isMatch) {
-        return res
-          .status(400)
-          .json({ message: "Mật khẩu hiện tại không đúng" });
+        return res.status(400).json({
+          success: false,
+          message: "Mật khẩu hiện tại không đúng",
+        });
       }
       admin.password = newPassword;
     }
 
     await admin.save();
-    res.json({ message: "Cập nhật thông tin thành công" });
+    res.json({
+      success: true,
+      message: "Cập nhật thông tin thành công",
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Không thể cập nhật thông tin", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Không thể cập nhật thông tin",
+      error: error.message,
+    });
   }
 });
 
