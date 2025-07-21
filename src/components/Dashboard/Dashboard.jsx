@@ -1,7 +1,14 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import { Bar, Doughnut, Line } from "react-chartjs-2";
-import { FaChartBar, FaChartLine, FaChartPie } from "react-icons/fa";
+import { Bar, Doughnut, Line, Pie } from "react-chartjs-2";
+import {
+  FaChartBar,
+  FaChartLine,
+  FaChartPie,
+  FaForest,
+  FaMapMarkedAlt,
+  FaTasks,
+} from "react-icons/fa";
 import { dashboardSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import "./Dashboard.css";
@@ -24,7 +31,6 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    // Start tour when data is loaded
     if (dashboardData && !loading) {
       startTour();
     }
@@ -56,16 +62,24 @@ const Dashboard = () => {
     return <div className="error-dashboard">{error}</div>;
   }
 
+  // Format number with commas
+  const formatNumber = (num) => {
+    if (!num) return "0";
+    return new Intl.NumberFormat("vi-VN").format(num);
+  };
+
+  // Prepare chart data
   const forestAreaData = {
-    labels: dashboardData?.status?.map((s) => s.type) || [],
+    labels: Object.keys(dashboardData?.status?.byType || {}),
     datasets: [
       {
         label: "Diện tích (ha)",
-        data: dashboardData?.status?.map((s) => s.area) || [],
+        data: Object.values(dashboardData?.status?.byType || {}),
         backgroundColor: [
           "rgba(44, 122, 123, 0.8)",
           "rgba(56, 178, 172, 0.8)",
           "rgba(49, 151, 149, 0.8)",
+          "rgba(44, 122, 123, 0.6)",
         ],
       },
     ],
@@ -76,10 +90,9 @@ const Dashboard = () => {
     datasets: [
       {
         data: [
-          dashboardData?.status?.filter((s) => s.quality === "Tốt").length || 0,
-          dashboardData?.status?.filter((s) => s.quality === "Trung bình")
-            .length || 0,
-          dashboardData?.status?.filter((s) => s.quality === "Kém").length || 0,
+          dashboardData?.status?.quality?.good || 0,
+          dashboardData?.status?.quality?.average || 0,
+          dashboardData?.status?.quality?.poor || 0,
         ],
         backgroundColor: [
           "rgba(72, 187, 120, 0.8)",
@@ -91,13 +104,49 @@ const Dashboard = () => {
   };
 
   const forestIndicesData = {
-    labels: dashboardData?.indices?.map((i) => i.year) || [],
+    labels: dashboardData?.indices?.trends?.map((i) => i.year) || [],
     datasets: [
       {
         label: "Chỉ số phát triển",
-        data: dashboardData?.indices?.map((i) => i.value) || [],
+        data: dashboardData?.indices?.trends?.map((i) => i.value) || [],
         borderColor: "rgb(44, 122, 123)",
         tension: 0.1,
+        fill: false,
+      },
+    ],
+  };
+
+  const monitoringData = {
+    labels: Object.keys(dashboardData?.monitoring?.byType || {}),
+    datasets: [
+      {
+        label: "Số điểm quan trắc",
+        data: Object.values(dashboardData?.monitoring?.byType || {}),
+        backgroundColor: [
+          "rgba(49, 130, 206, 0.8)",
+          "rgba(72, 187, 120, 0.8)",
+          "rgba(246, 173, 85, 0.8)",
+        ],
+      },
+    ],
+  };
+
+  const planningData = {
+    labels: ["Đã lên kế hoạch", "Đang thực hiện", "Hoàn thành", "Đã hủy"],
+    datasets: [
+      {
+        data: [
+          dashboardData?.planning?.byStatus?.planned || 0,
+          dashboardData?.planning?.byStatus?.inProgress || 0,
+          dashboardData?.planning?.byStatus?.completed || 0,
+          dashboardData?.planning?.byStatus?.cancelled || 0,
+        ],
+        backgroundColor: [
+          "rgba(246, 173, 85, 0.8)",
+          "rgba(72, 187, 120, 0.8)",
+          "rgba(49, 130, 206, 0.8)",
+          "rgba(245, 101, 101, 0.8)",
+        ],
       },
     ],
   };
@@ -105,6 +154,8 @@ const Dashboard = () => {
   const hasAreaData = forestAreaData.labels.length > 0;
   const hasQualityData = forestQualityData.datasets[0].data.some((d) => d > 0);
   const hasIndicesData = forestIndicesData.labels.length > 0;
+  const hasMonitoringData = monitoringData.labels.length > 0;
+  const hasPlanningData = planningData.datasets[0].data.some((d) => d > 0);
 
   return (
     <div className="dashboard-container">
@@ -112,26 +163,26 @@ const Dashboard = () => {
 
       <div className="stats-grid-dashboard">
         <div className="stat-card-dashboard">
+          <FaForest className="stat-icon-dashboard" />
           <h3>Tổng diện tích rừng</h3>
           <p className="stat-value-dashboard">
-            {dashboardData?.status
-              ?.reduce((sum, s) => sum + s.area, 0)
-              .toLocaleString() || "0"}{" "}
-            ha
+            {formatNumber(dashboardData?.status?.total)} ha
           </p>
         </div>
 
         <div className="stat-card-dashboard">
+          <FaMapMarkedAlt className="stat-icon-dashboard" />
           <h3>Số điểm quan trắc</h3>
           <p className="stat-value-dashboard">
-            {dashboardData?.monitoring?.length || 0}
+            {formatNumber(dashboardData?.monitoring?.total)}
           </p>
         </div>
 
         <div className="stat-card-dashboard">
+          <FaTasks className="stat-icon-dashboard" />
           <h3>Kế hoạch quy hoạch</h3>
           <p className="stat-value-dashboard">
-            {dashboardData?.planning?.length || 0}
+            {formatNumber(dashboardData?.planning?.total)}
           </p>
         </div>
       </div>
@@ -148,7 +199,16 @@ const Dashboard = () => {
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
-                      position: "bottom",
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: "Diện tích (ha)",
+                      },
                     },
                   },
                 }}
@@ -198,7 +258,7 @@ const Dashboard = () => {
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
-                      position: "bottom",
+                      display: false,
                     },
                   },
                   scales: {
@@ -217,6 +277,62 @@ const Dashboard = () => {
                 icon={FaChartLine}
                 message="Chưa có dữ liệu chỉ số phát triển"
               />
+            )}
+          </div>
+        </div>
+
+        <div className="chart-card-dashboard">
+          <h3>Phân bố điểm quan trắc</h3>
+          <div className="chart-container-dashboard">
+            {hasMonitoringData ? (
+              <Bar
+                data={monitoringData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: {
+                        display: true,
+                        text: "Số điểm",
+                      },
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <EmptyChart
+                icon={FaMapMarkedAlt}
+                message="Chưa có dữ liệu điểm quan trắc"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="chart-card-dashboard">
+          <h3>Trạng thái quy hoạch</h3>
+          <div className="chart-container-dashboard">
+            {hasPlanningData ? (
+              <Pie
+                data={planningData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                    },
+                  },
+                }}
+              />
+            ) : (
+              <EmptyChart icon={FaTasks} message="Chưa có dữ liệu quy hoạch" />
             )}
           </div>
         </div>

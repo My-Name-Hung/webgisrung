@@ -7,6 +7,7 @@ import {
   ForestStatus,
   ForestType,
   ForestUnit,
+  MonitoringPoint,
   PlanningType,
 } from "../models/ForestData.js";
 
@@ -545,6 +546,107 @@ router.delete("/planning/:id", verifyToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Không thể xóa quy hoạch",
+      error: error.message,
+    });
+  }
+});
+
+// Add dashboard endpoint
+router.get("/dashboard", async (req, res) => {
+  try {
+    // Get forest status statistics
+    const status = await ForestStatus.find().sort("-createdAt");
+
+    // Get forest indices statistics
+    const indices = await ForestIndices.find().sort("year");
+
+    // Get monitoring points statistics
+    const monitoring = await MonitoringPoint.find();
+
+    // Get planning statistics
+    const planning = await ForestPlanning.find();
+
+    // Calculate planning statistics by status
+    const planningByStatus = {
+      planned: planning.filter((p) => p.status === "planned").length,
+      inProgress: planning.filter((p) => p.status === "in-progress").length,
+      completed: planning.filter((p) => p.status === "completed").length,
+      cancelled: planning.filter((p) => p.status === "cancelled").length,
+    };
+
+    // Calculate monitoring statistics by type and status
+    const monitoringByType = {};
+    const monitoringByStatus = {};
+    monitoring.forEach((point) => {
+      monitoringByType[point.type] = (monitoringByType[point.type] || 0) + 1;
+      monitoringByStatus[point.status] =
+        (monitoringByStatus[point.status] || 0) + 1;
+    });
+
+    // Calculate forest indices trends
+    const indicesTrends = indices.reduce((acc, curr) => {
+      const year = curr.year;
+      if (!acc[year]) {
+        acc[year] = {
+          total: 0,
+          count: 0,
+        };
+      }
+      acc[year].total += curr.value;
+      acc[year].count += 1;
+      return acc;
+    }, {});
+
+    // Calculate average indices by year
+    const indicesAverages = Object.entries(indicesTrends).map(
+      ([year, data]) => ({
+        year: parseInt(year),
+        value: data.total / data.count,
+      })
+    );
+
+    // Calculate total forest area and area by type
+    const totalArea = status.reduce((sum, s) => sum + s.area, 0);
+    const areaByType = {};
+    status.forEach((s) => {
+      areaByType[s.type] = (areaByType[s.type] || 0) + s.area;
+    });
+
+    // Calculate quality distribution
+    const qualityDistribution = {
+      good: status.filter((s) => s.quality === "Tốt").length,
+      average: status.filter((s) => s.quality === "Trung bình").length,
+      poor: status.filter((s) => s.quality === "Kém").length,
+    };
+
+    res.json({
+      status: {
+        total: totalArea,
+        byType: areaByType,
+        quality: qualityDistribution,
+        data: status,
+      },
+      indices: {
+        trends: indicesAverages,
+        data: indices,
+      },
+      monitoring: {
+        total: monitoring.length,
+        byType: monitoringByType,
+        byStatus: monitoringByStatus,
+        data: monitoring,
+      },
+      planning: {
+        total: planning.length,
+        byStatus: planningByStatus,
+        data: planning,
+      },
+    });
+  } catch (error) {
+    console.error("Error getting dashboard data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Không thể lấy dữ liệu tổng quan",
       error: error.message,
     });
   }

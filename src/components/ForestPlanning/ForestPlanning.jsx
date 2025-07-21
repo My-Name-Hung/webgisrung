@@ -1,4 +1,4 @@
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Visibility } from "@mui/icons-material";
 import {
   Button,
   Dialog,
@@ -518,6 +518,42 @@ const ForestPlanning = () => {
     return new Intl.NumberFormat("vi-VN").format(num);
   };
 
+  const handleView = (planning) => {
+    if (planning.geojson) {
+      if (previewLayer.current) {
+        leafletMap.current.removeLayer(previewLayer.current);
+      }
+
+      previewLayer.current = L.geoJSON(planning.geojson, {
+        pointToLayer: createCustomMarker,
+        onEachFeature: (feature, layer) => {
+          if (feature.geometry.type !== "Point") {
+            if (feature.properties) {
+              const popupContent = document.createElement("div");
+              popupContent.className = "map-marker-popup";
+
+              let contentHTML = '<div class="popup-content">';
+              Object.entries(feature.properties).forEach(([key, value]) => {
+                contentHTML += `
+                  <div class="popup-row">
+                    <span class="popup-key">${key}:</span>
+                    <span class="popup-value">${value}</span>
+                  </div>
+                `;
+              });
+              contentHTML += "</div>";
+
+              popupContent.innerHTML = contentHTML;
+              layer.bindPopup(popupContent);
+            }
+          }
+        },
+      }).addTo(leafletMap.current);
+
+      leafletMap.current.fitBounds(previewLayer.current.getBounds());
+    }
+  };
+
   return (
     <div className="forestplanning-container">
       <h1 className="title-forestplanning">Quản lý quy hoạch rừng</h1>
@@ -583,6 +619,24 @@ const ForestPlanning = () => {
                   {type}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="form-group-forestplanning">
+            <label htmlFor="status">Trạng thái</label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              className="input-forestplanning"
+              required
+            >
+              <option value="">Chọn trạng thái</option>
+              <option value="planned">Đã lên kế hoạch</option>
+              <option value="in-progress">Đang thực hiện</option>
+              <option value="completed">Hoàn thành</option>
+              <option value="cancelled">Đã hủy</option>
             </select>
           </div>
 
@@ -875,6 +929,13 @@ const ForestPlanning = () => {
                       - {new Date(planning.endDate).toLocaleDateString("vi-VN")}
                     </TableCell>
                     <TableCell align="center">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleView(planning)}
+                        title="Xem bản đồ"
+                      >
+                        <Visibility />
+                      </IconButton>
                       <IconButton
                         color="primary"
                         onClick={() => handleEdit(planning)}

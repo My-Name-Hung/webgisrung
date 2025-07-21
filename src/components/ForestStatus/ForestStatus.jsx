@@ -1,4 +1,4 @@
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Visibility } from "@mui/icons-material";
 import {
   Button,
   Dialog,
@@ -532,6 +532,42 @@ const ForestStatus = () => {
         ],
       };
 
+  const handleView = (status) => {
+    if (status.geojson) {
+      if (previewLayer.current) {
+        leafletMap.current.removeLayer(previewLayer.current);
+      }
+
+      previewLayer.current = L.geoJSON(status.geojson, {
+        pointToLayer: createCustomMarker,
+        onEachFeature: (feature, layer) => {
+          if (feature.geometry.type !== "Point") {
+            if (feature.properties) {
+              const popupContent = document.createElement("div");
+              popupContent.className = "map-marker-popup";
+
+              let contentHTML = '<div class="popup-content">';
+              Object.entries(feature.properties).forEach(([key, value]) => {
+                contentHTML += `
+                  <div class="popup-row">
+                    <span class="popup-key">${key}:</span>
+                    <span class="popup-value">${value}</span>
+                  </div>
+                `;
+              });
+              contentHTML += "</div>";
+
+              popupContent.innerHTML = contentHTML;
+              layer.bindPopup(popupContent);
+            }
+          }
+        },
+      }).addTo(leafletMap.current);
+
+      leafletMap.current.fitBounds(previewLayer.current.getBounds());
+    }
+  };
+
   return (
     <div className="foreststatus-container">
       <h1 className="title-foreststatus">Quản lý hiện trạng rừng</h1>
@@ -859,6 +895,13 @@ const ForestStatus = () => {
                       {new Date(status.lastSurvey).toLocaleDateString("vi-VN")}
                     </TableCell>
                     <TableCell align="center">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleView(status)}
+                        title="Xem bản đồ"
+                      >
+                        <Visibility />
+                      </IconButton>
                       <IconButton
                         color="primary"
                         onClick={() => handleEdit(status)}

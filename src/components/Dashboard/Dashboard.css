@@ -48,6 +48,7 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
+  text-align: center;
 }
 
 .stat-card-dashboard::before {
@@ -73,6 +74,18 @@
 
 .stat-card-dashboard:hover::before {
   opacity: 1;
+}
+
+.stat-icon-dashboard {
+  font-size: 2.5rem;
+  color: #2d5a27;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.stat-card-dashboard:hover .stat-icon-dashboard {
+  transform: scale(1.1);
 }
 
 .stat-card-dashboard h3 {
@@ -111,6 +124,12 @@
   min-height: 400px;
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.chart-card-dashboard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(45, 90, 39, 0.15);
 }
 
 .chart-card-dashboard h3 {
@@ -202,6 +221,10 @@
   .charts-grid-dashboard {
     grid-template-columns: 1fr;
   }
+
+  .chart-card-dashboard {
+    min-height: 350px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -211,6 +234,14 @@
 
   .chart-card-dashboard {
     min-height: 300px;
+  }
+
+  .stat-icon-dashboard {
+    font-size: 2rem;
+  }
+
+  .stat-value-dashboard {
+    font-size: var(--font-size-xl);
   }
 }
 
@@ -224,10 +255,14 @@
   }
 
   .stat-value-dashboard {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
   }
 
   .chart-card-dashboard {
     min-height: 250px;
+  }
+
+  .stat-icon-dashboard {
+    font-size: 1.75rem;
   }
 }

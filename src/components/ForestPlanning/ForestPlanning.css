@@ -581,6 +581,7 @@ select.input-forestplanning option:checked {
   overflow: hidden;
 }
 
+/* Add styles for planning status */
 .planning-status {
   display: inline-block;
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -607,6 +608,15 @@ select.input-forestplanning option:checked {
 .planning-status.cancelled {
   background-color: rgba(245, 101, 101, 0.1);
   color: #c53030;
+}
+
+/* Update table cell styles */
+.planning-table td {
+  vertical-align: middle;
+}
+
+.planning-table .MuiIconButton-root {
+  margin: 0 4px;
 }
 
 /* Responsive adjustments for filters */
