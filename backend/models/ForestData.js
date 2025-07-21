@@ -106,31 +106,17 @@ const forestPlanningSchema = new mongoose.Schema({
   },
 });
 
-const monitoringPointSchema = new mongoose.Schema({
+// Add new schemas for custom types
+const mapTypeSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, "Tên loại bản đồ không được để trống"],
+    trim: true,
+    unique: true,
   },
-  type: {
+  description: {
     type: String,
-    required: true,
-    enum: ["Thường xuyên", "Định kỳ", "Đột xuất"],
-  },
-  status: {
-    type: String,
-    required: true,
-    enum: ["Hoạt động", "Tạm dừng", "Ngưng hoạt động"],
-  },
-  coordinates: {
-    type: {
-      type: String,
-      enum: ["Point"],
-      required: true,
-    },
-    coordinates: {
-      type: [Number],
-      required: true,
-    },
+    trim: true,
   },
   createdAt: {
     type: Date,
@@ -138,6 +124,45 @@ const monitoringPointSchema = new mongoose.Schema({
   },
 });
 
+const monitoringTypeSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên loại điểm không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+const monitoringStatusSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên trạng thái không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  color: {
+    type: String,
+    default: "#2d5a27",
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Update existing schemas to use dynamic types
 const geoJSONMapSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -147,7 +172,6 @@ const geoJSONMapSchema = new mongoose.Schema({
   type: {
     type: String,
     required: [true, "Loại bản đồ không được để trống"],
-    enum: ["Hiện trạng", "Quy hoạch", "Điểm quan trắc", "Đa dạng sinh học"],
   },
   data: {
     type: {
@@ -190,29 +214,74 @@ const geoJSONMapSchema = new mongoose.Schema({
   },
 });
 
-// Middleware to update the updatedAt field on save
+const monitoringPointSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên điểm không được để trống"],
+    trim: true,
+  },
+  type: {
+    type: String,
+    required: [true, "Loại điểm không được để trống"],
+  },
+  status: {
+    type: String,
+    required: [true, "Trạng thái không được để trống"],
+  },
+  coordinates: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      required: true,
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+  },
+});
+
+// Add middleware for updatedAt
 geoJSONMapSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
 });
 
-// Add index for geospatial queries
-geoJSONMapSchema.index({ "data.features.geometry": "2dsphere" });
+monitoringPointSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
+  next();
+});
 
 // Create models
 const ForestStatus = mongoose.model("ForestStatus", forestStatusSchema);
 const ForestIndices = mongoose.model("ForestIndices", forestIndicesSchema);
 const ForestPlanning = mongoose.model("ForestPlanning", forestPlanningSchema);
+const MapType = mongoose.model("MapType", mapTypeSchema);
+const MonitoringType = mongoose.model("MonitoringType", monitoringTypeSchema);
+const MonitoringStatus = mongoose.model(
+  "MonitoringStatus",
+  monitoringStatusSchema
+);
+const GeoJSONMap = mongoose.model("GeoJSONMap", geoJSONMapSchema);
 const MonitoringPoint = mongoose.model(
   "MonitoringPoint",
   monitoringPointSchema
 );
-const GeoJSONMap = mongoose.model("GeoJSONMap", geoJSONMapSchema);
 
 export {
   ForestIndices,
   ForestPlanning,
   ForestStatus,
   GeoJSONMap,
+  MapType,
   MonitoringPoint,
+  MonitoringStatus,
+  MonitoringType,
 };
