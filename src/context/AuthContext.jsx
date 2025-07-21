@@ -39,14 +39,14 @@ export const AuthProvider = ({ children }) => {
   const checkAuth = async (token) => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_SERVER_URL}/api/auth/profile`,
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/me`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (response.data.success) {
-        setAdmin(response.data.admin);
+        setAdmin(response.data.data);
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       } else {
         handleLogout();
@@ -55,9 +55,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Auth check failed:", error);
       handleLogout();
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 2000);
+      setLoading(false);
     }
   };
 
@@ -82,7 +80,10 @@ export const AuthProvider = ({ children }) => {
         }
       );
 
-      if (response.data.success) {
+      console.log("Login response:", response.data); // Debug log
+
+      // Kiểm tra nếu có token trong response
+      if (response.data.token) {
         const { token, admin } = response.data;
 
         // Set token expiry if remember me is checked
@@ -96,11 +97,15 @@ export const AuthProvider = ({ children }) => {
         axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         setAdmin(admin);
         return { success: true };
+      } else {
+        throw new Error(response.data.message || "Đăng nhập thất bại");
       }
     } catch (error) {
+      console.log("Login error:", error); // Debug log
       let errorMessage = "Đăng nhập thất bại";
 
       if (error.response) {
+        console.log("Error response:", error.response.data); // Debug log
         switch (error.response.status) {
           case 401:
             errorMessage = "Tên đăng nhập hoặc mật khẩu không chính xác";
@@ -114,14 +119,14 @@ export const AuthProvider = ({ children }) => {
           default:
             errorMessage = error.response.data?.message || errorMessage;
         }
+      } else if (error.message) {
+        errorMessage = error.message;
       }
 
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 2000);
+      setLoading(false);
     }
   };
 

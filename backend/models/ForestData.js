@@ -38,51 +38,13 @@ const forestStatusSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  geojson: {
-    type: {
-      type: String,
-      enum: ["FeatureCollection"],
-      required: true,
-    },
-    features: [
-      {
-        type: {
-          type: String,
-          required: true,
-          enum: ["Feature"],
-        },
-        geometry: {
-          type: {
-            type: String,
-            required: true,
-            enum: ["Point", "LineString", "Polygon", "MultiPolygon"],
-          },
-          coordinates: {
-            type: Array,
-            required: true,
-          },
-        },
-        properties: {
-          type: Map,
-          of: mongoose.Schema.Types.Mixed,
-          default: new Map(),
-        },
-      },
-    ],
-  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  updatedAt: {
-    type: Date,
+  geojson: {
+    type: mongoose.Schema.Types.Mixed,
   },
-});
-
-// Add middleware for updatedAt
-forestStatusSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
 });
 
 // Add new schemas for forest indices categories and units
@@ -165,6 +127,25 @@ forestIndicesSchema.pre("save", function (next) {
   next();
 });
 
+// Add schema for planning types
+const planningTypeSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên loại quy hoạch không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Update forestPlanningSchema to use dynamic types
 const forestPlanningSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -178,7 +159,6 @@ const forestPlanningSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ["Trồng rừng", "Bảo tồn", "Phát triển", "Phục hồi"],
   },
   status: {
     type: String,
@@ -198,11 +178,17 @@ const forestPlanningSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  geojson: {
+    type: mongoose.Schema.Types.Mixed,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
+
+// Create model for planning types
+const PlanningType = mongoose.model("PlanningType", planningTypeSchema);
 
 // Add new schemas for custom types
 const mapTypeSchema = new mongoose.Schema({
@@ -358,7 +344,6 @@ monitoringPointSchema.pre("save", function (next) {
 });
 
 // Create models
-const ForestType = mongoose.model("ForestType", forestTypeSchema);
 const ForestStatus = mongoose.model("ForestStatus", forestStatusSchema);
 const ForestIndices = mongoose.model("ForestIndices", forestIndicesSchema);
 const ForestPlanning = mongoose.model("ForestPlanning", forestPlanningSchema);
@@ -375,6 +360,8 @@ const MonitoringPoint = mongoose.model(
 );
 const ForestCategory = mongoose.model("ForestCategory", forestCategorySchema);
 const ForestUnit = mongoose.model("ForestUnit", forestUnitSchema);
+const ForestType = mongoose.model("ForestType", forestTypeSchema);
+const PlanningType = mongoose.model("PlanningType", planningTypeSchema);
 
 export {
   ForestCategory,
@@ -388,4 +375,5 @@ export {
   MonitoringPoint,
   MonitoringStatus,
   MonitoringType,
+  PlanningType,
 };

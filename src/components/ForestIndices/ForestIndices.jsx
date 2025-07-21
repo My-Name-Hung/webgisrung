@@ -1,4 +1,4 @@
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Search } from "@mui/icons-material";
 import {
   Button,
   Dialog,
@@ -16,8 +16,10 @@ import {
   TableHead,
   TablePagination,
   TableRow,
+  TextField,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
+import InputAdornment from "@mui/material/InputAdornment";
 import axios from "axios";
 import {
   ArcElement,
@@ -59,6 +61,21 @@ const formatNumber = (value) => {
   return value.toString();
 };
 
+// Add default categories and units
+const DEFAULT_CATEGORIES = [
+  "Độ che phủ",
+  "Chất lượng",
+  "Đa dạng sinh học",
+  "Bảo tồn",
+];
+
+const DEFAULT_UNITS = [
+  { name: "Hecta", symbol: "ha" },
+  { name: "Phần trăm", symbol: "%" },
+  { name: "Mét vuông", symbol: "m²" },
+  { name: "Kilogram", symbol: "kg" },
+];
+
 const ForestIndices = () => {
   const [formData, setFormData] = useState({
     name: "",
@@ -83,10 +100,28 @@ const ForestIndices = () => {
   });
   const [editMode, setEditMode] = useState(false);
   const { startTour } = useCustomTour(forestIndicesSteps);
+  const [filters, setFilters] = useState({
+    search: "",
+    category: "",
+  });
+  const [categories, setCategories] = useState([]);
+  const [units, setUnits] = useState([]);
+  const [openCategoryDialog, setOpenCategoryDialog] = useState(false);
+  const [openUnitDialog, setOpenUnitDialog] = useState(false);
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: "",
+    description: "",
+  });
+  const [unitFormData, setUnitFormData] = useState({
+    name: "",
+    description: "",
+    symbol: "",
+  });
 
   // Fetch all indices on component mount
   useEffect(() => {
     fetchIndices();
+    fetchCategoriesAndUnits();
   }, []);
 
   useEffect(() => {
@@ -104,6 +139,80 @@ const ForestIndices = () => {
     } catch (err) {
       console.error("Error fetching indices:", err);
       showSnackbar("Không thể tải danh sách chỉ số", "error");
+    }
+  };
+
+  const fetchCategoriesAndUnits = async () => {
+    try {
+      const [categoriesRes, unitsRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_SERVER_URL}/api/forest/categories`),
+        axios.get(`${import.meta.env.VITE_SERVER_URL}/api/forest/units`),
+      ]);
+
+      // Combine default categories with custom categories
+      setCategories([
+        ...DEFAULT_CATEGORIES,
+        ...categoriesRes.data.map((cat) => cat.name),
+      ]);
+
+      // Combine default units with custom units
+      setUnits([
+        ...DEFAULT_UNITS,
+        ...unitsRes.data.map((unit) => ({
+          name: unit.name,
+          symbol: unit.symbol,
+        })),
+      ]);
+    } catch (err) {
+      showSnackbar("Không thể tải danh sách danh mục và đơn vị", "error");
+    }
+  };
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    if (!categoryFormData.name) {
+      setError("Vui lòng nhập tên danh mục");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/categories`,
+        categoryFormData
+      );
+      showSnackbar("Thêm danh mục thành công");
+      setOpenCategoryDialog(false);
+      setCategoryFormData({ name: "", description: "" });
+      fetchCategoriesAndUnits();
+    } catch (err) {
+      showSnackbar(
+        err.response?.data?.message || "Không thể thêm danh mục",
+        "error"
+      );
+    }
+  };
+
+  const handleAddUnit = async (e) => {
+    e.preventDefault();
+    if (!unitFormData.name || !unitFormData.symbol) {
+      setError("Vui lòng nhập đầy đủ thông tin đơn vị");
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/units`,
+        unitFormData
+      );
+      showSnackbar("Thêm đơn vị thành công");
+      setOpenUnitDialog(false);
+      setUnitFormData({ name: "", description: "", symbol: "" });
+      fetchCategoriesAndUnits();
+    } catch (err) {
+      showSnackbar(
+        err.response?.data?.message || "Không thể thêm đơn vị",
+        "error"
+      );
     }
   };
 
@@ -262,6 +371,26 @@ const ForestIndices = () => {
     setPage(0);
   };
 
+  // Thêm hàm xử lý filter
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setPage(0); // Reset page when filter changes
+  };
+
+  // Lọc dữ liệu
+  const filteredIndices = indices.filter((index) => {
+    const matchSearch = index.name
+      .toLowerCase()
+      .includes(filters.search.toLowerCase());
+    const matchCategory =
+      !filters.category || index.category === filters.category;
+    return matchSearch && matchCategory;
+  });
+
   // Prepare preview chart data
   const chartData = previewData
     ? {
@@ -293,15 +422,21 @@ const ForestIndices = () => {
         ],
       };
 
-  // Prepare recent indices chart data
+  // Format date for recent indices
+  const formatDate = (date) => {
+    const d = new Date(date);
+    return `${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
+
+  // Update recent chart data
   const recentChartData = {
-    labels: indices.map((index) => index.year),
+    labels: indices.slice(0, 5).map((index) => formatDate(index.createdAt)),
     datasets: [
       {
         label: "Chỉ số gần đây",
-        data: indices.map((index) => index.value),
-        backgroundColor: indices.map(() => "rgba(45, 90, 39, 0.8)"),
-        borderColor: indices.map(() => "rgba(45, 90, 39, 1)"),
+        data: indices.slice(0, 5).map((index) => index.value),
+        backgroundColor: indices.slice(0, 5).map(() => "rgba(45, 90, 39, 0.8)"),
+        borderColor: indices.slice(0, 5).map(() => "rgba(45, 90, 39, 1)"),
         borderWidth: 1,
         borderRadius: 4,
       },
@@ -354,16 +489,21 @@ const ForestIndices = () => {
 
           <div className="form-group-forestindices">
             <label htmlFor="unit">Đơn vị</label>
-            <input
-              type="text"
+            <select
               id="unit"
               name="unit"
               value={formData.unit}
               onChange={handleInputChange}
               className="input-forestindices"
-              placeholder="Nhập đơn vị"
               required
-            />
+            >
+              <option value="">Chọn đơn vị</option>
+              {units.map((unit) => (
+                <option key={unit.name} value={unit.symbol}>
+                  {unit.name} ({unit.symbol})
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group-forestindices">
@@ -392,10 +532,11 @@ const ForestIndices = () => {
               required
             >
               <option value="">Chọn danh mục</option>
-              <option value="Độ che phủ">Độ che phủ</option>
-              <option value="Chất lượng">Chất lượng</option>
-              <option value="Đa dạng sinh học">Đa dạng sinh học</option>
-              <option value="Bảo tồn">Bảo tồn</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -575,6 +716,16 @@ const ForestIndices = () => {
                         bottom: 30,
                       },
                     },
+                    tooltip: {
+                      callbacks: {
+                        label: function (context) {
+                          const index = indices[context.dataIndex];
+                          return `${index.name}: ${formatNumber(index.value)} ${
+                            index.unit
+                          }`;
+                        },
+                      },
+                    },
                   },
                   scales: {
                     y: {
@@ -594,6 +745,45 @@ const ForestIndices = () => {
 
       <div className="indices-list-section">
         <h2>Danh sách chỉ số</h2>
+
+        <div className="indices-filters">
+          <TextField
+            name="search"
+            value={filters.search}
+            onChange={handleFilterChange}
+            placeholder="Tìm kiếm theo tên..."
+            variant="outlined"
+            size="small"
+            className="filter-input"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          <TextField
+            select
+            name="category"
+            value={filters.category}
+            onChange={handleFilterChange}
+            variant="outlined"
+            size="small"
+            className="filter-input"
+            SelectProps={{
+              native: true,
+            }}
+          >
+            <option value="">Tất cả danh mục</option>
+            <option value="Độ che phủ">Độ che phủ</option>
+            <option value="Chất lượng">Chất lượng</option>
+            <option value="Đa dạng sinh học">Đa dạng sinh học</option>
+            <option value="Bảo tồn">Bảo tồn</option>
+          </TextField>
+        </div>
+
         <TableContainer component={Paper} className="indices-table">
           <Table>
             <TableHead>
@@ -607,7 +797,7 @@ const ForestIndices = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {indices
+              {filteredIndices
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((index) => (
                   <TableRow key={index._id}>
@@ -640,7 +830,7 @@ const ForestIndices = () => {
           </Table>
           <TablePagination
             component="div"
-            count={indices.length}
+            count={filteredIndices.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
@@ -669,6 +859,112 @@ const ForestIndices = () => {
             Xóa
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Add Category Dialog */}
+      <Dialog
+        open={openCategoryDialog}
+        onClose={() => setOpenCategoryDialog(false)}
+      >
+        <DialogTitle>Thêm danh mục mới</DialogTitle>
+        <form onSubmit={handleAddCategory}>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Tên danh mục"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={categoryFormData.name}
+              onChange={(e) =>
+                setCategoryFormData((prev) => ({
+                  ...prev,
+                  name: e.target.value,
+                }))
+              }
+              required
+            />
+            <TextField
+              margin="dense"
+              label="Mô tả"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={categoryFormData.description}
+              onChange={(e) =>
+                setCategoryFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              multiline
+              rows={2}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenCategoryDialog(false)}>Hủy</Button>
+            <Button type="submit" variant="contained">
+              Thêm mới
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Add Unit Dialog */}
+      <Dialog open={openUnitDialog} onClose={() => setOpenUnitDialog(false)}>
+        <DialogTitle>Thêm đơn vị mới</DialogTitle>
+        <form onSubmit={handleAddUnit}>
+          <DialogContent>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Tên đơn vị"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={unitFormData.name}
+              onChange={(e) =>
+                setUnitFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              required
+            />
+            <TextField
+              margin="dense"
+              label="Ký hiệu"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={unitFormData.symbol}
+              onChange={(e) =>
+                setUnitFormData((prev) => ({ ...prev, symbol: e.target.value }))
+              }
+              required
+            />
+            <TextField
+              margin="dense"
+              label="Mô tả"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={unitFormData.description}
+              onChange={(e) =>
+                setUnitFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              multiline
+              rows={2}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenUnitDialog(false)}>Hủy</Button>
+            <Button type="submit" variant="contained">
+              Thêm mới
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Snackbar for notifications */}
