@@ -1,10 +1,28 @@
 import mongoose from "mongoose";
 
+// Add schema for forest types
+const forestTypeSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên loại rừng không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Update forestStatusSchema to use dynamic types
 const forestStatusSchema = new mongoose.Schema({
   type: {
     type: String,
     required: true,
-    enum: ["Rừng tự nhiên", "Rừng trồng", "Rừng phòng hộ", "Rừng đặc dụng"],
   },
   area: {
     type: Number,
@@ -20,12 +38,93 @@ const forestStatusSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  geojson: {
+    type: {
+      type: String,
+      enum: ["FeatureCollection"],
+      required: true,
+    },
+    features: [
+      {
+        type: {
+          type: String,
+          required: true,
+          enum: ["Feature"],
+        },
+        geometry: {
+          type: {
+            type: String,
+            required: true,
+            enum: ["Point", "LineString", "Polygon", "MultiPolygon"],
+          },
+          coordinates: {
+            type: Array,
+            required: true,
+          },
+        },
+        properties: {
+          type: Map,
+          of: mongoose.Schema.Types.Mixed,
+          default: new Map(),
+        },
+      },
+    ],
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+  },
+});
+
+// Add middleware for updatedAt
+forestStatusSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
+  next();
+});
+
+// Add new schemas for forest indices categories and units
+const forestCategorySchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên danh mục không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
+const forestUnitSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên đơn vị không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  symbol: {
+    type: String,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Update forestIndicesSchema to use dynamic categories
 const forestIndicesSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -50,7 +149,6 @@ const forestIndicesSchema = new mongoose.Schema({
   category: {
     type: String,
     required: [true, "Danh mục không được để trống"],
-    enum: ["Độ che phủ", "Chất lượng", "Đa dạng sinh học", "Bảo tồn"],
   },
   createdAt: {
     type: Date,
@@ -260,6 +358,7 @@ monitoringPointSchema.pre("save", function (next) {
 });
 
 // Create models
+const ForestType = mongoose.model("ForestType", forestTypeSchema);
 const ForestStatus = mongoose.model("ForestStatus", forestStatusSchema);
 const ForestIndices = mongoose.model("ForestIndices", forestIndicesSchema);
 const ForestPlanning = mongoose.model("ForestPlanning", forestPlanningSchema);
@@ -274,11 +373,16 @@ const MonitoringPoint = mongoose.model(
   "MonitoringPoint",
   monitoringPointSchema
 );
+const ForestCategory = mongoose.model("ForestCategory", forestCategorySchema);
+const ForestUnit = mongoose.model("ForestUnit", forestUnitSchema);
 
 export {
+  ForestCategory,
   ForestIndices,
   ForestPlanning,
   ForestStatus,
+  ForestType,
+  ForestUnit,
   GeoJSONMap,
   MapType,
   MonitoringPoint,
