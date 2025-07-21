@@ -1,3 +1,23 @@
+import { Delete, Edit } from "@mui/icons-material";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Paper,
+  Snackbar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+} from "@mui/material";
+import MuiAlert from "@mui/material/Alert";
 import axios from "axios";
 import {
   ArcElement,
@@ -51,23 +71,61 @@ const ForestIndices = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [indices, setIndices] = useState([]);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const [editMode, setEditMode] = useState(false);
   const { startTour } = useCustomTour(forestIndicesSteps);
 
+  // Fetch all indices on component mount
   useEffect(() => {
-    // Start tour when preview data is loaded
+    fetchIndices();
+  }, []);
+
+  useEffect(() => {
     if (previewData) {
       startTour();
     }
   }, [previewData, startTour]);
+
+  const fetchIndices = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/indices`
+      );
+      setIndices(response.data);
+    } catch (err) {
+      console.error("Error fetching indices:", err);
+      showSnackbar("Không thể tải danh sách chỉ số", "error");
+    }
+  };
+
+  const validateFormData = () => {
+    const errors = [];
+    if (!formData.name.trim()) errors.push("Tên chỉ số không được để trống");
+    if (!formData.value || isNaN(formData.value))
+      errors.push("Giá trị phải là số");
+    if (!formData.unit.trim()) errors.push("Đơn vị không được để trống");
+    if (!formData.category) errors.push("Vui lòng chọn danh mục");
+    if (formData.year < 1900 || formData.year > 2100)
+      errors.push("Năm không hợp lệ");
+
+    return errors;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let newValue = value;
 
     if (name === "value") {
-      // Remove non-numeric characters except decimal point
       newValue = value.replace(/[^0-9.]/g, "");
-      // Ensure only one decimal point
       const parts = newValue.split(".");
       if (parts.length > 2) {
         newValue = parts[0] + "." + parts.slice(1).join("");
@@ -80,7 +138,6 @@ const ForestIndices = () => {
     };
     setFormData(newFormData);
 
-    // Update preview data if all required fields are filled
     if (Object.values(newFormData).every((v) => v !== "")) {
       setPreviewData(newFormData);
     }
@@ -88,8 +145,10 @@ const ForestIndices = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!previewData) {
-      setError("Vui lòng điền đầy đủ thông tin");
+
+    const validationErrors = validateFormData();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(", "));
       return;
     }
 
@@ -98,24 +157,109 @@ const ForestIndices = () => {
     setSuccess("");
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/forest/indices`,
-        previewData
+      const data = {
+        ...formData,
+        value: parseFloat(formData.value),
+        year: parseInt(formData.year),
+        createdAt: new Date().toISOString(),
+      };
+
+      if (editMode && selectedIndex) {
+        await axios.put(
+          `${import.meta.env.VITE_SERVER_URL}/api/forest/indices/${
+            selectedIndex._id
+          }`,
+          data
+        );
+        showSnackbar("Cập nhật chỉ số thành công");
+      } else {
+        await axios.post(
+          `${import.meta.env.VITE_SERVER_URL}/api/forest/indices`,
+          data
+        );
+        showSnackbar("Thêm chỉ số thành công");
+      }
+
+      setSuccess(
+        editMode ? "Cập nhật chỉ số thành công" : "Thêm chỉ số thành công"
       );
-      setSuccess("Thêm chỉ số rừng thành công");
-      setFormData({
-        name: "",
-        value: "",
-        unit: "",
-        year: new Date().getFullYear(),
-        category: "",
-      });
-      setPreviewData(null);
+      resetForm();
+      fetchIndices();
     } catch (err) {
-      setError("Không thể thêm chỉ số rừng");
+      setError(err.response?.data?.message || "Không thể lưu chỉ số rừng");
+      showSnackbar("Không thể lưu chỉ số rừng", "error");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (index) => {
+    setFormData({
+      name: index.name,
+      value: index.value.toString(),
+      unit: index.unit,
+      year: index.year,
+      category: index.category,
+    });
+    setPreviewData({
+      name: index.name,
+      value: index.value,
+      unit: index.unit,
+      year: index.year,
+      category: index.category,
+    });
+    setSelectedIndex(index);
+    setEditMode(true);
+  };
+
+  const handleDelete = (index) => {
+    setSelectedIndex(index);
+    setOpenDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(
+        `${import.meta.env.VITE_SERVER_URL}/api/forest/indices/${
+          selectedIndex._id
+        }`
+      );
+      showSnackbar("Xóa chỉ số thành công");
+      fetchIndices();
+    } catch (err) {
+      showSnackbar("Không thể xóa chỉ số", "error");
+    }
+    setOpenDialog(false);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      value: "",
+      unit: "",
+      year: new Date().getFullYear(),
+      category: "",
+    });
+    setPreviewData(null);
+    setSelectedIndex(null);
+    setEditMode(false);
+  };
+
+  const showSnackbar = (message, severity = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   // Prepare preview chart data
@@ -149,12 +293,27 @@ const ForestIndices = () => {
         ],
       };
 
+  // Prepare recent indices chart data
+  const recentChartData = {
+    labels: indices.map((index) => index.year),
+    datasets: [
+      {
+        label: "Chỉ số gần đây",
+        data: indices.map((index) => index.value),
+        backgroundColor: indices.map(() => "rgba(45, 90, 39, 0.8)"),
+        borderColor: indices.map(() => "rgba(45, 90, 39, 1)"),
+        borderWidth: 1,
+        borderRadius: 4,
+      },
+    ],
+  };
+
   return (
     <div className="forestindices-container">
       <h1 className="title-forestindices">Quản lý chỉ số rừng</h1>
 
       <div className="form-section-forestindices">
-        <h2>Thêm chỉ số mới</h2>
+        <h2>{editMode ? "Cập nhật chỉ số" : "Thêm chỉ số mới"}</h2>
 
         {error && <div className="error-forestindices">{error}</div>}
         {success && <div className="success-forestindices">{success}</div>}
@@ -240,13 +399,24 @@ const ForestIndices = () => {
             </select>
           </div>
 
-          <button
-            type="submit"
-            className="submit-button-forestindices"
-            disabled={loading || !previewData}
-          >
-            {loading ? "Đang lưu..." : "Thêm mới"}
-          </button>
+          <div className="form-actions">
+            <button
+              type="submit"
+              className="submit-button-forestindices"
+              disabled={loading || !previewData}
+            >
+              {loading ? "Đang lưu..." : editMode ? "Cập nhật" : "Thêm mới"}
+            </button>
+            {editMode && (
+              <button
+                type="button"
+                className="cancel-button-forestindices"
+                onClick={resetForm}
+              >
+                Hủy
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -378,7 +548,144 @@ const ForestIndices = () => {
             <p>Dữ liệu sẽ được hiển thị dưới dạng biểu đồ cột và bảng</p>
           </div>
         )}
+
+        {indices.length > 0 && (
+          <div className="recent-indices-section">
+            <h3>Chỉ số gần đây</h3>
+            <div className="preview-chart-forestindices">
+              <Bar
+                data={recentChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    title: {
+                      display: true,
+                      text: "Biểu đồ chỉ số gần đây",
+                      font: {
+                        size: 16,
+                        family: "system-ui",
+                        weight: "500",
+                      },
+                      padding: {
+                        top: 10,
+                        bottom: 30,
+                      },
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        color: "rgba(45, 90, 39, 0.1)",
+                        drawBorder: false,
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
+
+      <div className="indices-list-section">
+        <h2>Danh sách chỉ số</h2>
+        <TableContainer component={Paper} className="indices-table">
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Tên chỉ số</TableCell>
+                <TableCell align="right">Giá trị</TableCell>
+                <TableCell>Đơn vị</TableCell>
+                <TableCell align="right">Năm</TableCell>
+                <TableCell>Danh mục</TableCell>
+                <TableCell align="center">Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {indices
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((index) => (
+                  <TableRow key={index._id}>
+                    <TableCell>{index.name}</TableCell>
+                    <TableCell align="right">
+                      {formatNumber(index.value)}
+                    </TableCell>
+                    <TableCell>{index.unit}</TableCell>
+                    <TableCell align="right">{index.year}</TableCell>
+                    <TableCell>{index.category}</TableCell>
+                    <TableCell align="center">
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleEdit(index)}
+                        title="Sửa"
+                      >
+                        <Edit />
+                      </IconButton>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDelete(index)}
+                        title="Xóa"
+                      >
+                        <Delete />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component="div"
+            count={indices.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            labelRowsPerPage="Số dòng mỗi trang"
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}-${to} của ${count}`
+            }
+          />
+        </TableContainer>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Xác nhận xóa</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Bạn có chắc chắn muốn xóa chỉ số "{selectedIndex?.name}" không?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)} color="primary">
+            Hủy
+          </Button>
+          <Button onClick={confirmDelete} color="error">
+            Xóa
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <MuiAlert
+          elevation={6}
+          variant="filled"
+          severity={snackbar.severity}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
     </div>
   );
 };

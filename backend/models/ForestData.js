@@ -29,29 +29,42 @@ const forestStatusSchema = new mongoose.Schema({
 const forestIndicesSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, "Tên chỉ số không được để trống"],
+    trim: true,
   },
   value: {
     type: Number,
-    required: true,
+    required: [true, "Giá trị không được để trống"],
   },
   unit: {
     type: String,
-    required: true,
+    required: [true, "Đơn vị không được để trống"],
+    trim: true,
   },
   year: {
     type: Number,
-    required: true,
+    required: [true, "Năm không được để trống"],
+    min: [1900, "Năm không hợp lệ"],
+    max: [2100, "Năm không hợp lệ"],
   },
   category: {
     type: String,
-    required: true,
+    required: [true, "Danh mục không được để trống"],
     enum: ["Độ che phủ", "Chất lượng", "Đa dạng sinh học", "Bảo tồn"],
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
+  updatedAt: {
+    type: Date,
+  },
+});
+
+// Middleware to update the updatedAt field on save
+forestIndicesSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 const forestPlanningSchema = new mongoose.Schema({

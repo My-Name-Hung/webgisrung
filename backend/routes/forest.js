@@ -1,148 +1,121 @@
 import express from "express";
-import auth from "../middleware/auth.js";
-import {
-  ForestIndices,
-  ForestPlanning,
-  ForestStatus,
-  MonitoringPoint,
-} from "../models/ForestData.js";
+import { verifyToken } from "../middleware/auth.js";
+import { ForestIndices } from "../models/ForestData.js";
 
 const router = express.Router();
 
-// Forest Status Routes
-router.post("/status", auth, async (req, res) => {
-  try {
-    const { type, area, quality, lastSurvey, geojson } = req.body;
-
-    const status = new ForestStatus({
-      type,
-      area: parseFloat(area),
-      quality,
-      lastSurvey,
-      geojson,
-    });
-
-    await status.save();
-    res.status(201).json(status);
-  } catch (error) {
-    console.error("Error adding forest status:", error);
-    res.status(500).json({ message: "Không thể thêm hiện trạng rừng" });
-  }
-});
-
-router.get("/status", async (req, res) => {
-  try {
-    const statuses = await ForestStatus.find();
-    res.json(statuses);
-  } catch (error) {
-    console.error("Error getting forest statuses:", error);
-    res
-      .status(500)
-      .json({ message: "Không thể lấy danh sách hiện trạng rừng" });
-  }
-});
-
-// Forest Indices Routes
-router.post("/indices", auth, async (req, res) => {
-  try {
-    const forestIndices = new ForestIndices(req.body);
-    await forestIndices.save();
-    res.status(201).json(forestIndices);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
+// GET /api/forest/indices - Lấy danh sách chỉ số
 router.get("/indices", async (req, res) => {
   try {
-    const forestIndices = await ForestIndices.find().sort("-year");
-    res.json(forestIndices);
+    const indices = await ForestIndices.find().sort({ createdAt: -1 });
+    res.json(indices);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res
+      .status(500)
+      .json({
+        message: "Không thể lấy danh sách chỉ số",
+        error: error.message,
+      });
   }
 });
 
-// Forest Planning Routes
-router.post("/planning", auth, async (req, res) => {
+// GET /api/forest/indices/recent - Lấy chỉ số gần đây
+router.get("/indices/recent", async (req, res) => {
   try {
-    const {
-      name,
-      area,
-      type,
-      status,
-      startDate,
-      endDate,
-      description,
-      geojson,
-    } = req.body;
+    const recentIndices = await ForestIndices.find()
+      .sort({ createdAt: -1 })
+      .limit(5);
+    res.json(recentIndices);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Không thể lấy chỉ số gần đây", error: error.message });
+  }
+});
 
-    const planning = new ForestPlanning({
+// POST /api/forest/indices - Thêm chỉ số mới
+router.post("/indices", verifyToken, async (req, res) => {
+  try {
+    const { name, value, unit, year, category } = req.body;
+
+    // Validate required fields
+    if (!name || !value || !unit || !year || !category) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng điền đầy đủ thông tin" });
+    }
+
+    const newIndex = new ForestIndices({
       name,
-      area: parseFloat(area),
-      type,
-      status,
-      startDate,
-      endDate,
-      description,
-      geojson,
+      value: parseFloat(value),
+      unit,
+      year: parseInt(year),
+      category,
+      createdAt: new Date(),
     });
 
-    await planning.save();
-    res.status(201).json(planning);
+    await newIndex.save();
+    res.status(201).json({ message: "Thêm chỉ số thành công", data: newIndex });
   } catch (error) {
-    console.error("Error adding forest planning:", error);
-    res.status(500).json({ message: "Không thể thêm quy hoạch rừng" });
+    res
+      .status(500)
+      .json({ message: "Không thể thêm chỉ số", error: error.message });
   }
 });
 
-router.get("/planning", async (req, res) => {
+// PUT /api/forest/indices/:id - Cập nhật chỉ số
+router.put("/indices/:id", verifyToken, async (req, res) => {
   try {
-    const plannings = await ForestPlanning.find();
-    res.json(plannings);
+    const { id } = req.params;
+    const { name, value, unit, year, category } = req.body;
+
+    // Validate required fields
+    if (!name || !value || !unit || !year || !category) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng điền đầy đủ thông tin" });
+    }
+
+    const updatedIndex = await ForestIndices.findByIdAndUpdate(
+      id,
+      {
+        name,
+        value: parseFloat(value),
+        unit,
+        year: parseInt(year),
+        category,
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!updatedIndex) {
+      return res.status(404).json({ message: "Không tìm thấy chỉ số" });
+    }
+
+    res.json({ message: "Cập nhật chỉ số thành công", data: updatedIndex });
   } catch (error) {
-    console.error("Error getting forest plannings:", error);
-    res.status(500).json({ message: "Không thể lấy danh sách quy hoạch rừng" });
+    res
+      .status(500)
+      .json({ message: "Không thể cập nhật chỉ số", error: error.message });
   }
 });
 
-// Monitoring Points Routes
-router.post("/monitoring", auth, async (req, res) => {
+// DELETE /api/forest/indices/:id - Xóa chỉ số
+router.delete("/indices/:id", verifyToken, async (req, res) => {
   try {
-    const monitoringPoint = new MonitoringPoint(req.body);
-    await monitoringPoint.save();
-    res.status(201).json(monitoringPoint);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
+    const { id } = req.params;
+    const deletedIndex = await ForestIndices.findByIdAndDelete(id);
 
-router.get("/monitoring", async (req, res) => {
-  try {
-    const monitoringPoints = await MonitoringPoint.find().sort("-createdAt");
-    res.json(monitoringPoints);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+    if (!deletedIndex) {
+      return res.status(404).json({ message: "Không tìm thấy chỉ số" });
+    }
 
-// Dashboard Data Route
-router.get("/dashboard", async (req, res) => {
-  try {
-    const [status, indices, monitoring, planning] = await Promise.all([
-      ForestStatus.find().sort("-createdAt"),
-      ForestIndices.find().sort("-year"),
-      MonitoringPoint.find().sort("-createdAt"),
-      ForestPlanning.find().sort("-createdAt"),
-    ]);
-
-    res.json({
-      status,
-      indices,
-      monitoring,
-      planning,
-    });
+    res.json({ message: "Xóa chỉ số thành công", data: deletedIndex });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res
+      .status(500)
+      .json({ message: "Không thể xóa chỉ số", error: error.message });
   }
 });
 

@@ -96,6 +96,32 @@
     rgba(204, 255, 170, 0.1) 100%
   );
   color: #ccffaa;
+  position: relative;
+}
+
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #ccffaa;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px rgba(204, 255, 170, 0.4);
+}
+
+.nav-item.active .icon {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(204, 255, 170, 0.4));
+}
+
+.nav-item.active:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(204, 255, 170, 0.25) 0%,
+    rgba(204, 255, 170, 0.15) 100%
+  );
 }
 
 .icon {

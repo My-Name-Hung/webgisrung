@@ -65,6 +65,151 @@
   box-shadow: 0 4px 12px rgba(45, 90, 39, 0.1);
 }
 
+.map-controls-forestmap {
+  display: flex;
+  gap: var(--spacing-sm);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px;
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: var(--spacing-md);
+  border: 1px solid rgba(45, 90, 39, 0.15);
+  backdrop-filter: blur(8px);
+  position: relative;
+  z-index: 1000;
+}
+
+.map-control-button {
+  background: white;
+  border: 1px solid rgba(45, 90, 39, 0.2);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  position: relative;
+}
+
+.map-control-button:hover {
+  background: #f0f9ff;
+  border-color: #2d5a27;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(45, 90, 39, 0.15);
+}
+
+.map-control-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(45, 90, 39, 0.1);
+}
+
+.map-control-button svg {
+  width: 18px;
+  height: 18px;
+  color: #2d5a27;
+  transition: all 0.2s ease;
+}
+
+.map-control-button:hover svg {
+  color: #1a472a;
+  transform: scale(1.1);
+}
+
+/* Custom marker styles */
+.custom-marker-icon {
+  color: #2d5a27;
+  font-size: 2.5rem;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.custom-marker-icon:hover {
+  color: #1a472a;
+  transform: scale(1.2);
+  filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.4));
+}
+
+.custom-marker-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translate(-50%, -100%);
+}
+
+/* Enhanced popup styles */
+.map-marker-popup {
+  min-width: 250px;
+  max-width: 350px;
+  padding: var(--spacing-md);
+  font-family: var(--font-family);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(45, 90, 39, 0.1);
+}
+
+.popup-row:last-child {
+  border-bottom: none;
+}
+
+.popup-key {
+  color: #2d5a27;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.popup-value {
+  color: #1a472a;
+  font-size: 0.9rem;
+  margin-left: var(--spacing-sm);
+  text-align: right;
+  flex: 2;
+  word-break: break-word;
+}
+
+/* Override default leaflet popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.leaflet-popup-tip-container {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(45, 90, 39, 0.1);
+}
+
 .upload-form-forestmap {
   display: flex;
   flex-direction: column;
@@ -91,9 +236,42 @@
   transition: all 0.2s ease;
 }
 
-.input-forestmap:focus {
+/* Custom select styles */
+select.input-forestmap {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232d5a27' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 1em;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select.input-forestmap:hover {
+  border-color: #2d5a27;
+  background-color: rgba(45, 90, 39, 0.02);
+}
+
+select.input-forestmap:focus {
   border-color: #2d5a27;
   box-shadow: 0 0 0 2px rgba(45, 90, 39, 0.1);
+  outline: none;
+}
+
+select.input-forestmap option {
+  padding: var(--spacing-sm);
+  background-color: white;
+  color: #2d5a27;
+  font-size: var(--font-size-sm);
+}
+
+select.input-forestmap option:hover,
+select.input-forestmap option:focus,
+select.input-forestmap option:active,
+select.input-forestmap option:checked {
+  background-color: rgba(45, 90, 39, 0.1);
 }
 
 .file-input-forestmap {
@@ -158,45 +336,6 @@
   margin-bottom: var(--spacing-lg);
 }
 
-.map-controls-forestmap {
-  position: absolute;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
-  z-index: 1000;
-  display: flex;
-  gap: var(--spacing-sm);
-  background: white;
-  padding: 4px;
-  border-radius: var(--border-radius-sm);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.map-control-button {
-  background: white;
-  border: 1px solid rgba(45, 90, 39, 0.2);
-  border-radius: var(--border-radius-sm);
-  padding: var(--spacing-sm);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-}
-
-.map-control-button:hover {
-  background: #f0f9ff;
-  border-color: #2d5a27;
-  transform: translateY(-1px);
-}
-
-.map-control-button svg {
-  width: 16px;
-  height: 16px;
-  color: #2d5a27;
-}
-
 .map-list-forestmap {
   background-color: var(--surface);
   border-radius: var(--border-radius-lg);
@@ -253,6 +392,22 @@
   color: var(--text-secondary);
   text-align: center;
   padding: var(--spacing-xl);
+}
+
+.preview-map-forestmap {
+  flex: 1;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  position: relative;
+  border: 2px solid rgba(45, 90, 39, 0.2);
+  box-shadow: 0 4px 16px rgba(45, 90, 39, 0.15);
+  margin-bottom: var(--spacing-lg);
+  height: 600px;
+  transition: all 0.3s ease;
+}
+
+.preview-map-forestmap:hover {
+  box-shadow: 0 6px 24px rgba(45, 90, 39, 0.2);
 }
 
 /* Responsive styles */

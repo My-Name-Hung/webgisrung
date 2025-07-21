@@ -11,6 +11,10 @@
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.2.0",
+    "@mui/material": "^7.2.0",
     "@reactour/tour": "^3.8.0",
     "@turf/turf": "^7.2.0",
     "axios": "^1.6.2",
@@ -26,6 +30,7 @@
     "react-icons": "^4.12.0",
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.20.1",
+    "react-toastify": "^11.0.5",
     "shpjs": "^6.1.0"
   },
   "devDependencies": {

@@ -3,11 +3,24 @@ import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import React, { useEffect, useRef, useState } from "react";
-import { FaFileUpload, FaMapMarkedAlt, FaTrash } from "react-icons/fa";
+import ReactDOMServer from "react-dom/server";
+import {
+  FaFileUpload,
+  FaMapMarkedAlt,
+  FaMapMarkerAlt,
+  FaSatellite,
+  FaTrash,
+} from "react-icons/fa";
 import shp from "shpjs";
 import { forestPlanningSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import "./ForestPlanning.css";
+
+const CustomMarkerIcon = () => (
+  <div className="custom-marker-container">
+    <FaMapMarkerAlt className="custom-marker-icon" />
+  </div>
+);
 
 const ForestPlanning = () => {
   const [formData, setFormData] = useState({
@@ -25,10 +38,12 @@ const ForestPlanning = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isSatelliteView, setIsSatelliteView] = useState(false);
   const { startTour } = useCustomTour(forestPlanningSteps);
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const previewLayer = useRef(null);
+  const tileLayer = useRef(null);
 
   useEffect(() => {
     // Initialize Leaflet map
@@ -37,9 +52,12 @@ const ForestPlanning = () => {
         [20.865139, 106.68383],
         11
       );
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-      }).addTo(leafletMap.current);
+      tileLayer.current = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution: "© OpenStreetMap",
+        }
+      ).addTo(leafletMap.current);
     }
 
     return () => {
@@ -56,6 +74,39 @@ const ForestPlanning = () => {
       startTour();
     }
   }, [previewData, startTour]);
+
+  const createCustomMarker = (feature, latlng) => {
+    const icon = L.divIcon({
+      className: "custom-div-icon",
+      html: ReactDOMServer.renderToString(<CustomMarkerIcon />),
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+    });
+
+    const marker = L.marker(latlng, { icon });
+
+    // Create popup content from feature properties
+    if (feature.properties) {
+      const popupContent = document.createElement("div");
+      popupContent.className = "map-marker-popup";
+
+      let contentHTML = '<div class="popup-content">';
+      Object.entries(feature.properties).forEach(([key, value]) => {
+        contentHTML += `
+          <div class="popup-row">
+            <span class="popup-key">${key}:</span>
+            <span class="popup-value">${value}</span>
+          </div>
+        `;
+      });
+      contentHTML += "</div>";
+
+      popupContent.innerHTML = contentHTML;
+      marker.bindPopup(popupContent);
+    }
+
+    return marker;
+  };
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -97,7 +148,34 @@ const ForestPlanning = () => {
       if (previewLayer.current) {
         leafletMap.current.removeLayer(previewLayer.current);
       }
-      previewLayer.current = L.geoJSON(geoJsonData).addTo(leafletMap.current);
+
+      previewLayer.current = L.geoJSON(geoJsonData, {
+        pointToLayer: createCustomMarker,
+        onEachFeature: (feature, layer) => {
+          if (feature.geometry.type !== "Point") {
+            // For non-point features (polygons, lines), bind popup to show properties
+            if (feature.properties) {
+              const popupContent = document.createElement("div");
+              popupContent.className = "map-marker-popup";
+
+              let contentHTML = '<div class="popup-content">';
+              Object.entries(feature.properties).forEach(([key, value]) => {
+                contentHTML += `
+                  <div class="popup-row">
+                    <span class="popup-key">${key}:</span>
+                    <span class="popup-value">${value}</span>
+                  </div>
+                `;
+              });
+              contentHTML += "</div>";
+
+              popupContent.innerHTML = contentHTML;
+              layer.bindPopup(popupContent);
+            }
+          }
+        },
+      }).addTo(leafletMap.current);
+
       leafletMap.current.fitBounds(previewLayer.current.getBounds());
 
       setFormData((prev) => ({
@@ -177,6 +255,33 @@ const ForestPlanning = () => {
       setError("Không thể thêm quy hoạch");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleMapType = () => {
+    if (!leafletMap.current || !tileLayer.current) return;
+
+    const newIsSatellite = !isSatelliteView;
+    setIsSatelliteView(newIsSatellite);
+
+    // Remove current tile layer
+    leafletMap.current.removeLayer(tileLayer.current);
+
+    // Add new tile layer based on selection
+    if (newIsSatellite) {
+      tileLayer.current = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
+        {
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        }
+      ).addTo(leafletMap.current);
+    } else {
+      tileLayer.current = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution: "© OpenStreetMap",
+        }
+      ).addTo(leafletMap.current);
     }
   };
 
@@ -329,40 +434,47 @@ const ForestPlanning = () => {
       <div className="preview-section-forestplanning">
         <h2>Xem trước quy hoạch</h2>
 
-        <div className="preview-map-forestplanning" ref={mapRef}>
-          <div className="map-controls-forestplanning">
-            <button
-              className="map-control-button"
-              onClick={() => {
-                if (previewLayer.current) {
-                  leafletMap.current.fitBounds(
-                    previewLayer.current.getBounds()
-                  );
-                }
-              }}
-              title="Căn chỉnh"
-            >
-              <FaMapMarkedAlt />
-            </button>
-            <button
-              className="map-control-button"
-              onClick={() => {
-                if (previewLayer.current) {
-                  leafletMap.current.removeLayer(previewLayer.current);
-                  previewLayer.current = null;
-                  setSelectedFile(null);
-                  setFormData((prev) => ({
-                    ...prev,
-                    geojson: null,
-                  }));
-                }
-              }}
-              title="Xóa dữ liệu"
-            >
-              <FaTrash />
-            </button>
-          </div>
+        <div className="map-controls-forestplanning">
+          <button
+            className="map-control-button"
+            onClick={() => {
+              if (previewLayer.current) {
+                leafletMap.current.fitBounds(previewLayer.current.getBounds());
+              }
+            }}
+            title="Căn chỉnh"
+          >
+            <FaMapMarkedAlt />
+          </button>
+          <button
+            className="map-control-button"
+            onClick={() => {
+              if (previewLayer.current) {
+                leafletMap.current.removeLayer(previewLayer.current);
+                previewLayer.current = null;
+                setSelectedFile(null);
+                setFormData((prev) => ({
+                  ...prev,
+                  geojson: null,
+                }));
+              }
+            }}
+            title="Xóa dữ liệu"
+          >
+            <FaTrash />
+          </button>
+          <button
+            className="map-control-button"
+            onClick={toggleMapType}
+            title={
+              isSatelliteView ? "Chuyển bản đồ thường" : "Chuyển bản đồ vệ tinh"
+            }
+          >
+            {isSatelliteView ? <FaMapMarkedAlt /> : <FaSatellite />}
+          </button>
         </div>
+
+        <div className="preview-map-forestplanning" ref={mapRef}></div>
 
         {previewData && (
           <div className="preview-card-forestplanning">

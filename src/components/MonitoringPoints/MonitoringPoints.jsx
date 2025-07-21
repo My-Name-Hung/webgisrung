@@ -2,10 +2,22 @@ import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import React, { useEffect, useRef, useState } from "react";
-import { FaMapMarkedAlt, FaTrash } from "react-icons/fa";
+import ReactDOMServer from "react-dom/server";
+import {
+  FaMapMarkedAlt,
+  FaMapMarkerAlt,
+  FaSatellite,
+  FaTrash,
+} from "react-icons/fa";
 import { monitoringSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import "./MonitoringPoints.css";
+
+const CustomMarkerIcon = () => (
+  <div className="custom-marker-container">
+    <FaMapMarkerAlt className="custom-marker-icon" />
+  </div>
+);
 
 const MonitoringPoints = () => {
   const [formData, setFormData] = useState({
@@ -21,10 +33,12 @@ const MonitoringPoints = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isSatelliteView, setIsSatelliteView] = useState(false);
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const markerRef = useRef(null);
   const popupRef = useRef(null);
+  const tileLayer = useRef(null);
   const { startTour } = useCustomTour(monitoringSteps);
 
   useEffect(() => {
@@ -34,9 +48,12 @@ const MonitoringPoints = () => {
         [20.865139, 106.68383],
         11
       );
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-      }).addTo(leafletMap.current);
+      tileLayer.current = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution: "© OpenStreetMap",
+        }
+      ).addTo(leafletMap.current);
 
       // Add click handler to update coordinates
       leafletMap.current.on("click", handleMapClick);
@@ -58,6 +75,44 @@ const MonitoringPoints = () => {
     }
   }, [previewData, startTour]);
 
+  const toggleMapType = () => {
+    if (!leafletMap.current || !tileLayer.current) return;
+
+    const newIsSatellite = !isSatelliteView;
+    setIsSatelliteView(newIsSatellite);
+
+    // Remove current tile layer
+    leafletMap.current.removeLayer(tileLayer.current);
+
+    // Add new tile layer based on selection
+    if (newIsSatellite) {
+      tileLayer.current = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
+        {
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        }
+      ).addTo(leafletMap.current);
+    } else {
+      tileLayer.current = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution: "© OpenStreetMap",
+        }
+      ).addTo(leafletMap.current);
+    }
+  };
+
+  const createCustomMarker = (latlng) => {
+    const icon = L.divIcon({
+      className: "custom-div-icon",
+      html: ReactDOMServer.renderToString(<CustomMarkerIcon />),
+      iconSize: [30, 30],
+      iconAnchor: [15, 30],
+    });
+
+    return L.marker(latlng, { icon });
+  };
+
   const handleMapClick = (e) => {
     const { lat, lng } = e.latlng;
 
@@ -67,7 +122,9 @@ const MonitoringPoints = () => {
     }
 
     // Create marker with popup
-    markerRef.current = L.marker([lat, lng]).addTo(leafletMap.current);
+    markerRef.current = createCustomMarker([lat, lng]).addTo(
+      leafletMap.current
+    );
 
     // Create popup content
     const popupContent = document.createElement("div");
@@ -137,7 +194,7 @@ const MonitoringPoints = () => {
           if (markerRef.current) {
             markerRef.current.remove();
           }
-          markerRef.current = L.marker([
+          markerRef.current = createCustomMarker([
             newCoordinates[1],
             newCoordinates[0],
           ]).addTo(leafletMap.current);
@@ -317,50 +374,52 @@ const MonitoringPoints = () => {
       <div className="preview-section-monitoringpoints">
         <h2>Xem trước điểm quan trắc</h2>
 
-        <div className="preview-map-monitoringpoints" ref={mapRef}>
-          <div
-            className="map-controls-monitoringpoints"
-            onClick={(e) => e.stopPropagation()} // Prevent map click
+        <div className="map-controls-monitoringpoints">
+          <button
+            className="map-control-button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (markerRef.current) {
+                const bounds = L.latLngBounds([markerRef.current.getLatLng()]);
+                leafletMap.current.fitBounds(bounds, { padding: [50, 50] });
+              }
+            }}
+            title="Căn chỉnh"
           >
-            <button
-              className="map-control-button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (markerRef.current) {
-                  const bounds = L.latLngBounds([
-                    markerRef.current.getLatLng(),
-                  ]);
-                  leafletMap.current.fitBounds(bounds, { padding: [50, 50] });
-                }
-              }}
-              title="Căn chỉnh"
-            >
-              <FaMapMarkedAlt />
-            </button>
-            <button
-              className="map-control-button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (markerRef.current) {
-                  markerRef.current.remove();
-                  markerRef.current = null;
-                  setFormData((prev) => ({
-                    ...prev,
-                    coordinates: {
-                      type: "Point",
-                      coordinates: [0, 0],
-                    },
-                  }));
-                }
-              }}
-              title="Xóa điểm"
-            >
-              <FaTrash />
-            </button>
-          </div>
+            <FaMapMarkedAlt />
+          </button>
+          <button
+            className="map-control-button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (markerRef.current) {
+                markerRef.current.remove();
+                markerRef.current = null;
+                setFormData((prev) => ({
+                  ...prev,
+                  coordinates: {
+                    type: "Point",
+                    coordinates: [0, 0],
+                  },
+                }));
+              }
+            }}
+            title="Xóa điểm"
+          >
+            <FaTrash />
+          </button>
+          <button
+            className="map-control-button"
+            onClick={toggleMapType}
+            title={
+              isSatelliteView ? "Chuyển bản đồ thường" : "Chuyển bản đồ vệ tinh"
+            }
+          >
+            {isSatelliteView ? <FaMapMarkedAlt /> : <FaSatellite />}
+          </button>
         </div>
+
+        <div className="preview-map-monitoringpoints" ref={mapRef}></div>
 
         {previewData && (
           <div className="preview-card-monitoringpoints">

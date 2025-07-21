@@ -153,7 +153,9 @@ const Layout = () => {
             <Link
               key={item.to}
               to={item.to}
-              className="nav-item"
+              className={`nav-item ${
+                location.pathname === item.to ? "active" : ""
+              }`}
               title={!isSidebarOpen ? item.label : undefined}
             >
               <span className="icon">{item.icon}</span>
