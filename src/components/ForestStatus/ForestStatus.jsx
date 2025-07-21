@@ -34,7 +34,16 @@ import {
 import shp from "shpjs";
 import { forestStatusSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
+import { applyStyle, parseSLD } from "../../utils/sldParser";
 import "./ForestStatus.css";
+
+const defaultStyle = {
+  fillColor: "#2d5a27",
+  weight: 2,
+  opacity: 1,
+  color: "#2d5a27",
+  fillOpacity: 0.3,
+};
 
 const CustomMarkerIcon = () => (
   <div className="custom-marker-container">
@@ -86,6 +95,8 @@ const ForestStatus = () => {
     type: "",
     quality: "",
   });
+  const [sldFile, setSldFile] = useState(null);
+  const [mapStyle, setMapStyle] = useState(null);
 
   useEffect(() => {
     fetchStatuses();
@@ -297,6 +308,8 @@ const ForestStatus = () => {
     setSelectedStatus(null);
     setEditMode(false);
     setSelectedFile(null);
+    setSldFile(null);
+    setMapStyle(null);
 
     if (previewLayer.current) {
       leafletMap.current.removeLayer(previewLayer.current);
@@ -410,6 +423,8 @@ const ForestStatus = () => {
 
       previewLayer.current = L.geoJSON(geoJsonData, {
         pointToLayer: createCustomMarker,
+        style: (feature) =>
+          mapStyle ? applyStyle(feature, mapStyle) : defaultStyle,
         onEachFeature: (feature, layer) => {
           if (feature.geometry.type !== "Point") {
             // For non-point features (polygons, lines), bind popup to show properties
@@ -448,6 +463,63 @@ const ForestStatus = () => {
         ...prev,
         geojson: null,
       }));
+    }
+  };
+
+  const handleSldFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".sld")) {
+      setError("Vui lòng chọn file SLD hợp lệ");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const style = await parseSLD(text);
+      setMapStyle(style);
+      setSldFile(file);
+
+      // Re-render map with new style if data exists
+      if (previewLayer.current && formData.geojson) {
+        leafletMap.current.removeLayer(previewLayer.current);
+        previewLayer.current = L.geoJSON(formData.geojson, {
+          pointToLayer: createCustomMarker,
+          style: (feature) => applyStyle(feature, style),
+          onEachFeature: (feature, layer) => {
+            if (feature.geometry.type !== "Point") {
+              if (feature.properties) {
+                const popupContent = document.createElement("div");
+                popupContent.className = "map-marker-popup";
+
+                let contentHTML = '<div class="popup-content">';
+                Object.entries(feature.properties).forEach(([key, value]) => {
+                  contentHTML += `
+                    <div class="popup-row">
+                      <span class="popup-key">${key}:</span>
+                      <span class="popup-value">${value}</span>
+                    </div>
+                  `;
+                });
+                contentHTML += "</div>";
+
+                popupContent.innerHTML = contentHTML;
+                layer.bindPopup(popupContent);
+              }
+            }
+          },
+        }).addTo(leafletMap.current);
+
+        leafletMap.current.fitBounds(previewLayer.current.getBounds());
+      }
+
+      setSuccess("Áp dụng style thành công");
+    } catch (err) {
+      console.error("Error parsing SLD:", err);
+      setError("Không thể đọc file SLD. Vui lòng kiểm tra định dạng file.");
+      setSldFile(null);
+      setMapStyle(null);
     }
   };
 
@@ -681,6 +753,37 @@ const ForestStatus = () => {
                 <div>
                   Kích thước: {(selectedFile.size / 1024).toFixed(2)} KB
                 </div>
+              </div>
+            )}
+          </div>
+
+          <div className="form-group-foreststatus">
+            <label>File style (SLD)</label>
+            <div className="file-input-foreststatus">
+              <input
+                type="file"
+                accept=".sld"
+                onChange={handleSldFileChange}
+                style={{ display: "none" }}
+                id="sldInput"
+              />
+              <label
+                htmlFor="sldInput"
+                style={{ cursor: "pointer", display: "block" }}
+              >
+                <FaFileUpload
+                  style={{ fontSize: "2rem", marginBottom: "0.5rem" }}
+                />
+                <div>Kéo thả file hoặc click để chọn</div>
+                <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                  (Hỗ trợ: SLD - Styled Layer Descriptor)
+                </div>
+              </label>
+            </div>
+            {sldFile && (
+              <div className="file-preview-foreststatus">
+                <div>File style đã chọn: {sldFile.name}</div>
+                <div>Kích thước: {(sldFile.size / 1024).toFixed(2)} KB</div>
               </div>
             )}
           </div>

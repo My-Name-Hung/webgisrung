@@ -1,29 +1,170 @@
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
 import axios from "axios";
-import React, { useEffect, useState } from "react";
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+} from "chart.js";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import React, { useCallback, useEffect, useState } from "react";
 import { Bar, Doughnut, Line, Pie } from "react-chartjs-2";
 import {
   FaChartBar,
   FaChartLine,
   FaChartPie,
-  FaForest,
+  FaEye,
   FaMapMarkedAlt,
   FaTasks,
 } from "react-icons/fa";
+import { MdForest } from "react-icons/md";
+import { GeoJSON, MapContainer, TileLayer, useMap } from "react-leaflet";
 import { dashboardSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import "./Dashboard.css";
 
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const EmptyChart = ({ icon: Icon, message }) => (
   <div className="empty-chart-dashboard">
-    <Icon />
+    {Icon && <Icon className="empty-chart-icon" />}
     <p>{message}</p>
   </div>
 );
+
+// Component to fit map bounds to GeoJSON
+const MapBoundsFitter = ({ geojson }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (geojson) {
+      try {
+        const layer = L.geoJSON(geojson);
+        const bounds = layer.getBounds();
+        map.fitBounds(bounds);
+      } catch (error) {
+        console.error("Error fitting bounds:", error);
+      }
+    }
+  }, [geojson, map]);
+
+  return null;
+};
+
+const MapDialog = ({ open, onClose, data }) => {
+  const [parsedGeoJSON, setParsedGeoJSON] = useState(null);
+
+  useEffect(() => {
+    if (data?.geojson) {
+      try {
+        // Parse GeoJSON if it's a string
+        const geoJSONData =
+          typeof data.geojson === "string"
+            ? JSON.parse(data.geojson)
+            : data.geojson;
+        setParsedGeoJSON(geoJSONData);
+      } catch (error) {
+        console.error("Error parsing GeoJSON:", error);
+        setParsedGeoJSON(null);
+      }
+    }
+  }, [data]);
+
+  const onEachFeature = useCallback((feature, layer) => {
+    if (feature.properties) {
+      const popupContent = Object.entries(feature.properties)
+        .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+        .join("<br>");
+      layer.bindPopup(popupContent);
+    }
+  }, []);
+
+  const style = useCallback(() => {
+    return {
+      fillColor: "#2d5a27",
+      weight: 2,
+      opacity: 1,
+      color: "#2d5a27",
+      fillOpacity: 0.3,
+    };
+  }, []);
+
+  if (!parsedGeoJSON) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        style: {
+          maxHeight: "90vh",
+        },
+      }}
+    >
+      <DialogTitle>{data?.type || data?.name || "Bản đồ chi tiết"}</DialogTitle>
+      <DialogContent style={{ height: "70vh", padding: 0 }}>
+        <MapContainer
+          center={[16.0376435, 108.187897]}
+          zoom={11}
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          {parsedGeoJSON && (
+            <GeoJSON
+              data={parsedGeoJSON}
+              style={style}
+              onEachFeature={onEachFeature}
+            />
+          )}
+          <MapBoundsFitter geojson={parsedGeoJSON} />
+        </MapContainer>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedData, setSelectedData] = useState(null);
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
   const { startTour } = useCustomTour(dashboardSteps);
 
   useEffect(() => {
@@ -49,6 +190,11 @@ const Dashboard = () => {
     }
   };
 
+  const handleViewMap = (data) => {
+    setSelectedData(data);
+    setMapDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="loading-dashboard">
@@ -59,7 +205,19 @@ const Dashboard = () => {
   }
 
   if (error) {
-    return <div className="error-dashboard">{error}</div>;
+    return (
+      <div className="error-dashboard">
+        <p>{error}</p>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={fetchDashboardData}
+          style={{ marginTop: "1rem" }}
+        >
+          Thử lại
+        </Button>
+      </div>
+    );
   }
 
   // Format number with commas
@@ -163,7 +321,7 @@ const Dashboard = () => {
 
       <div className="stats-grid-dashboard">
         <div className="stat-card-dashboard">
-          <FaForest className="stat-icon-dashboard" />
+          <MdForest className="stat-icon-dashboard" />
           <h3>Tổng diện tích rừng</h3>
           <p className="stat-value-dashboard">
             {formatNumber(dashboardData?.status?.total)} ha
@@ -337,6 +495,65 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      <div className="summary-table-section">
+        <h2>Bảng tổng hợp dữ liệu</h2>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Loại dữ liệu</TableCell>
+                <TableCell>Tên</TableCell>
+                <TableCell>Diện tích (ha)</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell>Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {dashboardData?.status?.data?.map((item) => (
+                <TableRow key={item._id}>
+                  <TableCell>Hiện trạng rừng</TableCell>
+                  <TableCell>{item.type}</TableCell>
+                  <TableCell>{formatNumber(item.area)}</TableCell>
+                  <TableCell>{item.quality}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleViewMap(item)}
+                      disabled={!item.geojson}
+                    >
+                      <FaEye />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {dashboardData?.planning?.data?.map((item) => (
+                <TableRow key={item._id}>
+                  <TableCell>Quy hoạch</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell>{formatNumber(item.area)}</TableCell>
+                  <TableCell>{item.status}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleViewMap(item)}
+                      disabled={!item.geojson}
+                    >
+                      <FaEye />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </div>
+
+      <MapDialog
+        open={mapDialogOpen}
+        onClose={() => setMapDialogOpen(false)}
+        data={selectedData}
+      />
     </div>
   );
 };
