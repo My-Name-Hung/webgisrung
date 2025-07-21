@@ -246,7 +246,7 @@ const ForestPlanning = () => {
     setOpenDialog(false);
   };
 
-  // Update handleSubmit to handle edit mode
+  // Update handleSubmit to use correct endpoint
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!previewData) {

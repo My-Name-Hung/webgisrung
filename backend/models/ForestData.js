@@ -1,24 +1,6 @@
 import mongoose from "mongoose";
 
-// Add schema for forest types
-const forestTypeSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "Tên loại rừng không được để trống"],
-    trim: true,
-    unique: true,
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
-
-// Update forestStatusSchema to use dynamic types
+// Define all schemas first
 const forestStatusSchema = new mongoose.Schema({
   type: {
     type: String,
@@ -38,16 +20,15 @@ const forestStatusSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  geojson: {
+    type: mongoose.Schema.Types.Mixed,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  geojson: {
-    type: mongoose.Schema.Types.Mixed,
-  },
 });
 
-// Add new schemas for forest indices categories and units
 const forestCategorySchema = new mongoose.Schema({
   name: {
     type: String,
@@ -86,7 +67,23 @@ const forestUnitSchema = new mongoose.Schema({
   },
 });
 
-// Update forestIndicesSchema to use dynamic categories
+const forestTypeSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên loại rừng không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const forestIndicesSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -121,31 +118,6 @@ const forestIndicesSchema = new mongoose.Schema({
   },
 });
 
-// Middleware to update the updatedAt field on save
-forestIndicesSchema.pre("save", function (next) {
-  this.updatedAt = new Date();
-  next();
-});
-
-// Add schema for planning types
-const planningTypeSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, "Tên loại quy hoạch không được để trống"],
-    trim: true,
-    unique: true,
-  },
-  description: {
-    type: String,
-    trim: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
-
-// Update forestPlanningSchema to use dynamic types
 const forestPlanningSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -187,10 +159,23 @@ const forestPlanningSchema = new mongoose.Schema({
   },
 });
 
-// Create model for planning types
-const PlanningType = mongoose.model("PlanningType", planningTypeSchema);
+const planningTypeSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Tên loại quy hoạch không được để trống"],
+    trim: true,
+    unique: true,
+  },
+  description: {
+    type: String,
+    trim: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
-// Add new schemas for custom types
 const mapTypeSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -246,7 +231,6 @@ const monitoringStatusSchema = new mongoose.Schema({
   },
 });
 
-// Update existing schemas to use dynamic types
 const geoJSONMapSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -332,7 +316,12 @@ const monitoringPointSchema = new mongoose.Schema({
   },
 });
 
-// Add middleware for updatedAt
+// Add middleware
+forestIndicesSchema.pre("save", function (next) {
+  this.updatedAt = new Date();
+  next();
+});
+
 geoJSONMapSchema.pre("save", function (next) {
   this.updatedAt = new Date();
   next();
@@ -363,6 +352,7 @@ const ForestUnit = mongoose.model("ForestUnit", forestUnitSchema);
 const ForestType = mongoose.model("ForestType", forestTypeSchema);
 const PlanningType = mongoose.model("PlanningType", planningTypeSchema);
 
+// Export all models
 export {
   ForestCategory,
   ForestIndices,
