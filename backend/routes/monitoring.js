@@ -10,12 +10,14 @@ const validatePoint = (data) => {
     return "Vui lòng cung cấp đầy đủ thông tin";
   }
 
-  if (!["Thường xuyên", "Định kỳ", "Đột xuất"].includes(data.type)) {
-    return "Loại điểm không hợp lệ";
+  // Remove hardcoded type validation to allow dynamic types
+  if (!data.type.trim()) {
+    return "Loại điểm quan trắc không được để trống";
   }
 
-  if (!["Hoạt động", "Tạm dừng", "Ngưng hoạt động"].includes(data.status)) {
-    return "Trạng thái không hợp lệ";
+  // Remove hardcoded status validation to allow dynamic statuses
+  if (!data.status.trim()) {
+    return "Trạng thái không được để trống";
   }
 
   if (
@@ -66,9 +68,15 @@ router.get("/", async (req, res) => {
 // Add new monitoring point
 router.post("/", verifyToken, async (req, res) => {
   try {
+    console.log(
+      "Received monitoring point data:",
+      JSON.stringify(req.body, null, 2)
+    );
+
     // Validate data
     const validationError = validatePoint(req.body);
     if (validationError) {
+      console.log("Validation error:", validationError);
       return res.status(400).json({
         success: false,
         message: validationError,
@@ -81,6 +89,8 @@ router.post("/", verifyToken, async (req, res) => {
     });
 
     await point.save();
+    console.log("Monitoring point created successfully:", point._id);
+
     res.status(201).json({
       success: true,
       message: "Thêm điểm quan trắc thành công",

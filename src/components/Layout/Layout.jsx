@@ -165,25 +165,6 @@ const Layout = () => {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="tour-buttons">
-            <button
-              className="tour-button"
-              onClick={handleStartTour}
-              title="Xem hướng dẫn"
-            >
-              <FaQuestionCircle />
-              {isSidebarOpen && <span>Hướng dẫn</span>}
-            </button>
-            <button
-              className="tour-button"
-              onClick={handleResetTour}
-              title="Đặt lại hướng dẫn"
-            >
-              <FaRedo />
-              {isSidebarOpen && <span>Đặt lại hướng dẫn</span>}
-            </button>
-          </div>
-
           <div
             className="user-info"
             onClick={handleOpenUserModal}

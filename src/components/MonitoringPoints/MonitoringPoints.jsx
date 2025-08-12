@@ -28,8 +28,6 @@ import {
   FaSatellite,
   FaTrash,
 } from "react-icons/fa";
-import { monitoringSteps } from "../../config/tourSteps";
-import useCustomTour from "../../hooks/useTour";
 import "./MonitoringPoints.css";
 
 const CustomMarkerIcon = () => (
@@ -38,12 +36,18 @@ const CustomMarkerIcon = () => (
   </div>
 );
 
-const DEFAULT_MONITORING_TYPES = ["Thường xuyên", "Định kỳ", "Đột xuất"];
+// Add default monitoring types and statuses
+const DEFAULT_MONITORING_TYPES = [
+  "Quan trắc chất lượng nước",
+  "Quan trắc không khí",
+  "Quan trắc đất",
+  "Quan trắc sinh vật",
+];
 
 const DEFAULT_MONITORING_STATUSES = [
-  { name: "Hoạt động", color: "#2f855a" },
-  { name: "Tạm dừng", color: "#c05621" },
-  { name: "Ngưng hoạt động", color: "#c53030" },
+  { name: "Hoạt động", color: "#22c55e" },
+  { name: "Tạm dừng", color: "#f59e0b" },
+  { name: "Ngưng hoạt động", color: "#ef4444" },
 ];
 
 const MonitoringPoints = () => {
@@ -52,8 +56,8 @@ const MonitoringPoints = () => {
     type: "",
     status: "",
     coordinates: {
-      type: "Point",
-      coordinates: [0, 0], // [longitude, latitude]
+      latitude: 0,
+      longitude: 0,
     },
   });
   const [previewData, setPreviewData] = useState(null);
@@ -64,12 +68,10 @@ const MonitoringPoints = () => {
   const mapRef = useRef(null);
   const leafletMap = useRef(null);
   const markerRef = useRef(null);
-  const popupRef = useRef(null);
   const tileLayer = useRef(null);
-  const { startTour } = useCustomTour(monitoringSteps);
   const [points, setPoints] = useState([]);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [editMode, setEditMode] = useState(false);
@@ -113,18 +115,9 @@ const MonitoringPoints = () => {
     return () => {
       if (leafletMap.current) {
         leafletMap.current.off("click", handleMapClick);
-        leafletMap.current.remove();
-        leafletMap.current = null;
       }
     };
   }, []);
-
-  useEffect(() => {
-    // Start tour when preview data is loaded
-    if (previewData) {
-      startTour();
-    }
-  }, [previewData, startTour]);
 
   useEffect(() => {
     fetchPoints();
@@ -240,7 +233,30 @@ const MonitoringPoints = () => {
     }
   };
 
-  const createCustomMarker = (latlng) => {
+  const createCustomMarker = (feature, latlng) => {
+    // Validate latlng parameter
+    if (!latlng || !Array.isArray(latlng) || latlng.length !== 2) {
+      console.error("Invalid latlng parameter:", latlng);
+      return null;
+    }
+
+    const [lat, lng] = latlng;
+
+    // Validate coordinates
+    if (
+      typeof lat !== "number" ||
+      typeof lng !== "number" ||
+      isNaN(lat) ||
+      isNaN(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      console.error("Invalid coordinates:", { lat, lng });
+      return null;
+    }
+
     const icon = L.divIcon({
       className: "custom-div-icon",
       html: ReactDOMServer.renderToString(<CustomMarkerIcon />),
@@ -248,7 +264,7 @@ const MonitoringPoints = () => {
       iconAnchor: [15, 30],
     });
 
-    return L.marker(latlng, { icon });
+    return L.marker([lat, lng], { icon });
   };
 
   const handleInputChange = (e) => {
@@ -257,26 +273,27 @@ const MonitoringPoints = () => {
     if (name === "longitude" || name === "latitude") {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
-        const newCoordinates = [...formData.coordinates.coordinates];
+        const newCoordinates = {
+          latitude: parseFloat(formData.coordinates.latitude.toFixed(6)),
+          longitude: parseFloat(formData.coordinates.longitude.toFixed(6)),
+        };
         if (name === "longitude") {
-          newCoordinates[0] = numValue;
+          newCoordinates.longitude = numValue;
         } else {
-          newCoordinates[1] = numValue;
+          newCoordinates.latitude = numValue;
         }
 
         const newFormData = {
           ...formData,
-          coordinates: {
-            type: "Point",
-            coordinates: newCoordinates,
-          },
+          coordinates: newCoordinates,
         };
         setFormData(newFormData);
 
         // Update preview data if all required fields are filled
         if (
           Object.values(newFormData).every((v) => v !== "") &&
-          newFormData.coordinates.coordinates.every((c) => c !== 0)
+          newFormData.coordinates.latitude !== 0 &&
+          newFormData.coordinates.longitude !== 0
         ) {
           setPreviewData(newFormData);
         }
@@ -287,11 +304,11 @@ const MonitoringPoints = () => {
             markerRef.current.remove();
           }
           markerRef.current = createCustomMarker([
-            newCoordinates[1],
-            newCoordinates[0],
+            newCoordinates.latitude,
+            newCoordinates.longitude,
           ]).addTo(leafletMap.current);
           leafletMap.current.setView(
-            [newCoordinates[1], newCoordinates[0]],
+            [newCoordinates.latitude, newCoordinates.longitude],
             leafletMap.current.getZoom()
           );
         }
@@ -303,13 +320,14 @@ const MonitoringPoints = () => {
       };
       setFormData(newFormData);
 
-    // Update preview data if all required fields are filled
-    if (
-      Object.values(newFormData).every((v) => v !== "") &&
-      newFormData.coordinates.coordinates.every((c) => c !== 0)
-    ) {
-      setPreviewData(newFormData);
-    }
+      // Update preview data if all required fields are filled
+      if (
+        Object.values(newFormData).every((v) => v !== "") &&
+        newFormData.coordinates.latitude !== 0 &&
+        newFormData.coordinates.longitude !== 0
+      ) {
+        setPreviewData(newFormData);
+      }
     }
   };
 
@@ -333,34 +351,70 @@ const MonitoringPoints = () => {
 
   const handleView = (point) => {
     if (markerRef.current) {
-      markerRef.current.remove();
+      leafletMap.current.removeLayer(markerRef.current);
+    }
+
+    if (
+      !point.coordinates ||
+      !point.coordinates.coordinates ||
+      !Array.isArray(point.coordinates.coordinates) ||
+      point.coordinates.coordinates.length !== 2
+    ) {
+      console.error("Invalid point coordinates:", point);
+      return;
     }
 
     const [lng, lat] = point.coordinates.coordinates;
-    markerRef.current = createCustomMarker([lat, lng]).addTo(
-      leafletMap.current
-    );
-    leafletMap.current.setView([lat, lng], 15);
+    const marker = createCustomMarker(null, [lat, lng]);
+    if (marker) {
+      markerRef.current = marker.addTo(leafletMap.current);
+      leafletMap.current.setView([lat, lng], 15);
+    }
   };
 
   const handleEdit = (point) => {
-    setSelectedPoint(point);
+    if (
+      !point.coordinates ||
+      !point.coordinates.coordinates ||
+      !Array.isArray(point.coordinates.coordinates) ||
+      point.coordinates.coordinates.length !== 2
+    ) {
+      console.error("Invalid point coordinates for edit:", point);
+      return;
+    }
+
     setFormData({
       name: point.name,
       type: point.type,
       status: point.status,
-      coordinates: point.coordinates,
+      coordinates: {
+        latitude: point.coordinates.coordinates[1],
+        longitude: point.coordinates.coordinates[0],
+      },
     });
     setPreviewData({
       name: point.name,
       type: point.type,
       status: point.status,
-      coordinates: point.coordinates,
+      coordinates: {
+        latitude: point.coordinates.coordinates[1],
+        longitude: point.coordinates.coordinates[0],
+      },
     });
+    setSelectedPoint(point);
     setEditMode(true);
 
-    // Show point on map
-    handleView(point);
+    // Update map marker
+    if (markerRef.current) {
+      leafletMap.current.removeLayer(markerRef.current);
+    }
+
+    const [lng, lat] = point.coordinates.coordinates;
+    const marker = createCustomMarker(null, [lat, lng]);
+    if (marker) {
+      markerRef.current = marker.addTo(leafletMap.current);
+      leafletMap.current.setView([lat, lng], leafletMap.current.getZoom());
+    }
   };
 
   const handleDelete = (point) => {
@@ -388,8 +442,10 @@ const MonitoringPoints = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!previewData) {
-      setError("Vui lòng điền đầy đủ thông tin");
+
+    const validationErrors = validateFormData();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(", "));
       return;
     }
 
@@ -398,118 +454,109 @@ const MonitoringPoints = () => {
     setSuccess("");
 
     try {
+      const data = {
+        ...formData,
+        coordinates: {
+          type: "Point",
+          coordinates: [
+            formData.coordinates.longitude,
+            formData.coordinates.latitude,
+          ],
+        },
+      };
+
       if (editMode && selectedPoint) {
         await axios.put(
           `${import.meta.env.VITE_SERVER_URL}/api/monitoring/${
             selectedPoint._id
           }`,
-          previewData
+          data
         );
         setSuccess("Cập nhật điểm quan trắc thành công");
       } else {
-      await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/monitoring`,
-        previewData
-      );
-      setSuccess("Thêm điểm quan trắc thành công");
+        await axios.post(
+          `${import.meta.env.VITE_SERVER_URL}/api/monitoring`,
+          data
+        );
+        setSuccess("Thêm điểm quan trắc thành công");
       }
 
       resetForm();
       fetchPoints();
     } catch (err) {
-      setError(
-        editMode
-          ? "Không thể cập nhật điểm quan trắc"
-          : "Không thể thêm điểm quan trắc"
-      );
+      setError(err.response?.data?.message || "Không thể lưu điểm quan trắc");
     } finally {
       setLoading(false);
     }
   };
 
   const resetForm = () => {
-      setFormData({
-        name: "",
-        type: "",
-        status: "",
-        coordinates: {
-          type: "Point",
-          coordinates: [0, 0],
-        },
-      });
-      setPreviewData(null);
+    setFormData({
+      name: "",
+      type: "",
+      status: "",
+      coordinates: {
+        latitude: 0,
+        longitude: 0,
+      },
+    });
+    setPreviewData(null);
     setSelectedPoint(null);
     setEditMode(false);
 
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
   };
 
   const handleMapClick = (e) => {
-    const { lat, lng } = e.latlng;
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
 
-    // Update marker
+    setFormData((prev) => ({
+      ...prev,
+      coordinates: {
+        latitude: parseFloat(lat.toFixed(6)),
+        longitude: parseFloat(lng.toFixed(6)),
+      },
+    }));
+
     if (markerRef.current) {
-      markerRef.current.remove();
+      leafletMap.current.removeLayer(markerRef.current);
     }
 
-    // Create marker with popup
-    markerRef.current = createCustomMarker([lat, lng]).addTo(
-      leafletMap.current
-    );
-
-    // Create popup content
-    const popupContent = document.createElement("div");
-    popupContent.className = "map-marker-popup";
-    popupContent.innerHTML = `
-      <div class="popup-coordinates">
-        <div class="popup-coordinate">
-          <span class="popup-label">Vĩ độ:</span>
-          <span class="popup-value">${lat.toFixed(6)}</span>
-        </div>
-        <div class="popup-coordinate">
-          <span class="popup-label">Kinh độ:</span>
-          <span class="popup-value">${lng.toFixed(6)}</span>
-        </div>
-      </div>
-      <button class="popup-button">Sử dụng tọa độ này</button>
-    `;
-
-    // Add click handler to popup button
-    const button = popupContent.querySelector("button");
-    button.onclick = () => {
-      const newFormData = {
-        ...formData,
-        coordinates: {
-          type: "Point",
-          coordinates: [lng, lat], // [longitude, latitude]
-        },
-      };
-      setFormData(newFormData);
-
-      // Update preview data if all required fields are filled
-      if (
-        Object.values(newFormData).every((v) => v !== "") &&
-        newFormData.coordinates.coordinates.every((c) => c !== 0)
-      ) {
-        setPreviewData(newFormData);
-      }
-
-      if (popupRef.current) {
-        popupRef.current.close();
-      }
-    };
-
-    // Show popup
-    if (popupRef.current) {
-      popupRef.current.remove();
+    const marker = createCustomMarker(null, [lat, lng]);
+    if (marker) {
+      markerRef.current = marker.addTo(leafletMap.current);
     }
-    popupRef.current = L.popup()
-      .setLatLng([lat, lng])
-      .setContent(popupContent)
-      .openOn(leafletMap.current);
+  };
+
+  const validateFormData = () => {
+    const errors = [];
+    if (!formData.name.trim())
+      errors.push("Tên điểm quan trắc không được để trống");
+    if (!formData.type) errors.push("Vui lòng chọn loại quan trắc");
+    if (!formData.status) errors.push("Vui lòng chọn trạng thái");
+    if (
+      formData.coordinates.latitude === 0 ||
+      formData.coordinates.longitude === 0
+    ) {
+      errors.push("Vui lòng chọn tọa độ hợp lệ");
+    }
+    if (
+      formData.coordinates.latitude < -90 ||
+      formData.coordinates.latitude > 90
+    ) {
+      errors.push("Vĩ độ phải trong khoảng -90 đến 90");
+    }
+    if (
+      formData.coordinates.longitude < -180 ||
+      formData.coordinates.longitude > 180
+    ) {
+      errors.push("Kinh độ phải trong khoảng -180 đến 180");
+    }
+    return errors;
   };
 
   return (
@@ -541,7 +588,7 @@ const MonitoringPoints = () => {
 
           <div className="form-group-monitoringpoints">
             <div className="type-select-container">
-            <label htmlFor="type">Loại điểm</label>
+              <label htmlFor="type">Loại điểm</label>
               <Button
                 variant="outlined"
                 size="small"
@@ -570,7 +617,7 @@ const MonitoringPoints = () => {
 
           <div className="form-group-monitoringpoints">
             <div className="type-select-container">
-            <label htmlFor="status">Trạng thái</label>
+              <label htmlFor="status">Trạng thái</label>
               <Button
                 variant="outlined"
                 size="small"
@@ -608,7 +655,7 @@ const MonitoringPoints = () => {
                   type="number"
                   id="longitude"
                   name="longitude"
-                  value={formData.coordinates.coordinates[0]}
+                  value={formData.coordinates.longitude}
                   onChange={handleInputChange}
                   className="input-monitoringpoints"
                   step="any"
@@ -625,7 +672,7 @@ const MonitoringPoints = () => {
                   type="number"
                   id="latitude"
                   name="latitude"
-                  value={formData.coordinates.coordinates[1]}
+                  value={formData.coordinates.latitude}
                   onChange={handleInputChange}
                   className="input-monitoringpoints"
                   step="any"
@@ -639,11 +686,11 @@ const MonitoringPoints = () => {
           </div>
 
           <div className="form-actions">
-          <button
-            type="submit"
-            className="submit-button-monitoringpoints"
-            disabled={loading || !previewData}
-          >
+            <button
+              type="submit"
+              className="submit-button-monitoringpoints"
+              disabled={loading || !previewData}
+            >
               {loading ? "Đang xử lý..." : editMode ? "Cập nhật" : "Thêm mới"}
             </button>
             {editMode && (
@@ -653,7 +700,7 @@ const MonitoringPoints = () => {
                 onClick={resetForm}
               >
                 Hủy
-          </button>
+              </button>
             )}
           </div>
         </form>
@@ -663,39 +710,39 @@ const MonitoringPoints = () => {
         <h2>Xem trước điểm quan trắc</h2>
 
         <div className="map-controls-monitoringpoints">
-            <button
-              className="map-control-button"
-              onClick={(e) => {
-                e.preventDefault();
-                if (markerRef.current) {
+          <button
+            className="map-control-button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (markerRef.current) {
                 const bounds = L.latLngBounds([markerRef.current.getLatLng()]);
-                  leafletMap.current.fitBounds(bounds, { padding: [50, 50] });
-                }
-              }}
-              title="Căn chỉnh"
-            >
-              <FaMapMarkedAlt />
-            </button>
-            <button
-              className="map-control-button"
-              onClick={(e) => {
-                e.preventDefault();
-                if (markerRef.current) {
-                  markerRef.current.remove();
-                  markerRef.current = null;
-                  setFormData((prev) => ({
-                    ...prev,
-                    coordinates: {
-                      type: "Point",
-                      coordinates: [0, 0],
-                    },
-                  }));
-                }
-              }}
-              title="Xóa điểm"
-            >
-              <FaTrash />
-            </button>
+                leafletMap.current.fitBounds(bounds, { padding: [50, 50] });
+              }
+            }}
+            title="Căn chỉnh"
+          >
+            <FaMapMarkedAlt />
+          </button>
+          <button
+            className="map-control-button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (markerRef.current) {
+                markerRef.current.remove();
+                markerRef.current = null;
+                setFormData((prev) => ({
+                  ...prev,
+                  coordinates: {
+                    latitude: 0,
+                    longitude: 0,
+                  },
+                }));
+              }
+            }}
+            title="Xóa điểm"
+          >
+            <FaTrash />
+          </button>
           <button
             className="map-control-button"
             onClick={toggleMapType}
@@ -741,13 +788,13 @@ const MonitoringPoints = () => {
               <div className="preview-coordinate">
                 <span className="preview-coordinate-label">Kinh độ:</span>
                 <span className="preview-coordinate-value">
-                  {previewData.coordinates.coordinates[0].toFixed(6)}
+                  {previewData.coordinates.longitude.toFixed(6)}
                 </span>
               </div>
               <div className="preview-coordinate">
                 <span className="preview-coordinate-label">Vĩ độ:</span>
                 <span className="preview-coordinate-value">
-                  {previewData.coordinates.coordinates[1].toFixed(6)}
+                  {previewData.coordinates.latitude.toFixed(6)}
                 </span>
               </div>
             </div>

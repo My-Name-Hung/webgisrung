@@ -21,7 +21,7 @@ import * as turf from "@turf/turf";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import {
   FaFileUpload,
@@ -33,7 +33,7 @@ import {
 import shp from "shpjs";
 import { forestMapSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
-import { applyStyle, parseSLD } from "../../utils/sldParser";
+import { applyStyle, defaultStyle, parseSLD } from "../../utils/sldParser";
 import "./ForestMap.css";
 
 const CustomMarkerIcon = () => (
@@ -240,30 +240,44 @@ const ForestMap = () => {
         leafletMap.current.removeLayer(previewLayer.current);
       }
 
+      const defaultStyle = {
+        radius: 8,
+        fillColor: "#ff7800",
+        color: "#000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8,
+      };
+
       previewLayer.current = L.geoJSON(geoJsonData, {
-        pointToLayer: createCustomMarker,
-        style: (feature) => (mapStyle ? applyStyle(feature, mapStyle) : null),
+        pointToLayer: (feature, latlng) => {
+          const style = mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+          return L.circleMarker(latlng, {
+            ...style,
+            radius: 8, // Fixed radius for points
+          });
+        },
+        style: (feature) => {
+          return mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+        },
         onEachFeature: (feature, layer) => {
-          if (feature.geometry.type !== "Point") {
-            // For non-point features (polygons, lines), bind popup to show properties
-            if (feature.properties) {
-              const popupContent = document.createElement("div");
-              popupContent.className = "map-marker-popup";
+          if (feature.properties) {
+            const popupContent = document.createElement("div");
+            popupContent.className = "map-marker-popup";
 
-              let contentHTML = '<div class="popup-content">';
-              Object.entries(feature.properties).forEach(([key, value]) => {
-                contentHTML += `
-                  <div class="popup-row">
-                    <span class="popup-key">${key}:</span>
-                    <span class="popup-value">${value}</span>
-                  </div>
-                `;
-              });
-              contentHTML += "</div>";
+            let contentHTML = '<div class="popup-content">';
+            Object.entries(feature.properties).forEach(([key, value]) => {
+              contentHTML += `
+                <div class="popup-row">
+                  <span class="popup-key">${key}:</span>
+                  <span class="popup-value">${value}</span>
+                </div>
+              `;
+            });
+            contentHTML += "</div>";
 
-              popupContent.innerHTML = contentHTML;
-              layer.bindPopup(popupContent);
-            }
+            popupContent.innerHTML = contentHTML;
+            layer.bindPopup(popupContent);
           }
         },
       }).addTo(leafletMap.current);
@@ -289,36 +303,44 @@ const ForestMap = () => {
 
     try {
       const text = await file.text();
-      const style = await parseSLD(text);
-      setMapStyle(style);
+      const styleRules = await parseSLD(text);
+      setMapStyle(styleRules);
       setSldFile(file);
 
       // Re-render map with new style if data exists
       if (previewLayer.current && previewData) {
         leafletMap.current.removeLayer(previewLayer.current);
         previewLayer.current = L.geoJSON(previewData, {
-          pointToLayer: createCustomMarker,
-          style: (feature) => applyStyle(feature, style),
+          pointToLayer: (feature, latlng) => {
+            const style = mapStyle
+              ? applyStyle(feature, mapStyle)
+              : defaultStyle;
+            return L.circleMarker(latlng, {
+              ...style,
+              radius: 8, // Fixed radius for points
+            });
+          },
+          style: (feature) => {
+            return mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+          },
           onEachFeature: (feature, layer) => {
-            if (feature.geometry.type !== "Point") {
-              if (feature.properties) {
-                const popupContent = document.createElement("div");
-                popupContent.className = "map-marker-popup";
+            if (feature.properties) {
+              const popupContent = document.createElement("div");
+              popupContent.className = "map-marker-popup";
 
-                let contentHTML = '<div class="popup-content">';
-                Object.entries(feature.properties).forEach(([key, value]) => {
-                  contentHTML += `
-                    <div class="popup-row">
-                      <span class="popup-key">${key}:</span>
-                      <span class="popup-value">${value}</span>
-                    </div>
-                  `;
-                });
-                contentHTML += "</div>";
+              let contentHTML = '<div class="popup-content">';
+              Object.entries(feature.properties).forEach(([key, value]) => {
+                contentHTML += `
+                  <div class="popup-row">
+                    <span class="popup-key">${key}:</span>
+                    <span class="popup-value">${value}</span>
+                  </div>
+                `;
+              });
+              contentHTML += "</div>";
 
-                popupContent.innerHTML = contentHTML;
-                layer.bindPopup(popupContent);
-              }
+              popupContent.innerHTML = contentHTML;
+              layer.bindPopup(popupContent);
             }
           },
         }).addTo(leafletMap.current);
@@ -368,7 +390,8 @@ const ForestMap = () => {
       }
 
       previewLayer.current = L.geoJSON(map.data, {
-        pointToLayer: createCustomMarker,
+        style: geoJSONStyle,
+        pointToLayer: pointToLayer,
         onEachFeature: (feature, layer) => {
           if (feature.geometry.type !== "Point") {
             if (feature.properties) {
@@ -518,6 +541,35 @@ const ForestMap = () => {
       ).addTo(leafletMap.current);
     }
   };
+
+  // Style function for uploaded GeoJSON
+  const geoJSONStyle = useCallback(
+    (feature) => {
+      if (mapStyle) {
+        return applyStyle(feature, mapStyle);
+      }
+      return {
+        fillColor: "#2d5a27",
+        weight: 2,
+        opacity: 1,
+        color: "#2d5a27",
+        fillOpacity: 0.7,
+      };
+    },
+    [mapStyle]
+  );
+
+  // Point to layer function for uploaded GeoJSON
+  const pointToLayer = useCallback(
+    (feature, latlng) => {
+      if (mapStyle) {
+        const style = applyStyle(feature, mapStyle);
+        return createCustomMarker(feature, latlng).setStyle(style);
+      }
+      return createCustomMarker(feature, latlng);
+    },
+    [mapStyle]
+  );
 
   return (
     <div className="forestmap-container">
