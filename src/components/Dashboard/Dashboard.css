@@ -1,13 +1,12 @@
 .dashboard-container {
   padding: var(--spacing-lg);
-  min-height: calc(100vh - 80px);
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.9) 0%,
     rgba(255, 255, 255, 0.8) 100%
   );
   overflow-y: auto;
-  max-height: calc(100vh - 80px);
+  max-height: 100vh;
 }
 
 .title-dashboard {

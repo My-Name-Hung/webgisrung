@@ -46,9 +46,108 @@ export const parseSLD = async (sldContent) => {
         weight: 2,
         opacity: 1,
         color: "#2d5a27",
-        fillOpacity: 0.7,
+        fillOpacity: 1,
+        radius: 8, // Default radius for points
       };
 
+      // Process PointSymbolizer
+      const pointSymbolizer =
+        rule["se:PointSymbolizer"] || rule.PointSymbolizer;
+
+      if (pointSymbolizer) {
+        const graphic =
+          pointSymbolizer["se:Graphic"] || pointSymbolizer.Graphic;
+        if (graphic) {
+          // Get size
+          const size = graphic["se:Size"] || graphic.Size;
+          if (size) {
+            const sizeValue = typeof size === "object" ? size["#text"] : size;
+            style.radius = Math.max(3, parseFloat(sizeValue) || 8);
+            console.log(
+              `Setting point radius to: ${style.radius} from ${sizeValue}`
+            );
+          }
+
+          // Process Mark
+          const mark = graphic["se:Mark"] || graphic.Mark;
+          if (mark) {
+            // Process Fill
+            const fill = mark["se:Fill"] || mark.Fill;
+            if (fill) {
+              const svgParams =
+                fill["se:SvgParameter"] ||
+                fill.SvgParameter ||
+                fill.CssParameter;
+              if (svgParams) {
+                const params = Array.isArray(svgParams)
+                  ? svgParams
+                  : [svgParams];
+                params.forEach((param) => {
+                  const paramName = param["@_name"];
+                  const paramValue =
+                    typeof param === "object" ? param["#text"] || param : param;
+
+                  if (paramName === "fill") {
+                    style.fillColor = normalizeColor(paramValue);
+                    console.log(
+                      `Setting point fillColor to: ${style.fillColor} from ${paramValue}`
+                    );
+                  } else if (paramName === "fill-opacity") {
+                    style.fillOpacity = Math.max(
+                      1,
+                      Math.min(1, parseFloat(paramValue))
+                    );
+                    console.log(
+                      `Setting point fillOpacity to: ${style.fillOpacity} from ${paramValue}`
+                    );
+                  }
+                });
+              }
+            }
+
+            // Process Stroke
+            const stroke = mark["se:Stroke"] || mark.Stroke;
+            if (stroke) {
+              const svgParams =
+                stroke["se:SvgParameter"] ||
+                stroke.SvgParameter ||
+                stroke.CssParameter;
+              if (svgParams) {
+                const params = Array.isArray(svgParams)
+                  ? svgParams
+                  : [svgParams];
+                params.forEach((param) => {
+                  const paramName = param["@_name"];
+                  const paramValue =
+                    typeof param === "object" ? param["#text"] || param : param;
+
+                  if (paramName === "stroke") {
+                    style.color = normalizeColor(paramValue);
+                    console.log(
+                      `Setting point stroke color to: ${style.color} from ${paramValue}`
+                    );
+                  } else if (paramName === "stroke-width") {
+                    style.weight = Math.max(0.5, parseFloat(paramValue));
+                    console.log(
+                      `Setting point stroke width to: ${style.weight} from ${paramValue}`
+                    );
+                  } else if (paramName === "stroke-opacity") {
+                    style.opacity = Math.max(
+                      0.8,
+                      Math.min(1, parseFloat(paramValue))
+                    );
+                    console.log(
+                      `Setting point stroke opacity to: ${style.opacity} from ${paramValue}`
+                    );
+                  }
+                });
+              }
+            }
+          }
+        }
+      }
+
+      // Process PolygonSymbolizer (keep existing logic for polygons)
       const polygonSymbolizer =
         rule["se:PolygonSymbolizer"] || rule.PolygonSymbolizer;
 
@@ -62,12 +161,13 @@ export const parseSLD = async (sldContent) => {
             const params = Array.isArray(svgParams) ? svgParams : [svgParams];
             params.forEach((param) => {
               const paramName = param["@_name"];
-              const paramValue = param["#text"] || param;
+              const paramValue =
+                typeof param === "object" ? param["#text"] || param : param;
 
               if (paramName === "fill") {
                 style.fillColor = normalizeColor(paramValue);
                 console.log(
-                  `Setting fillColor to: ${style.fillColor} from ${paramValue}`
+                  `Setting polygon fillColor to: ${style.fillColor} from ${paramValue}`
                 );
               } else if (paramName === "fill-opacity") {
                 style.fillOpacity = Math.max(
@@ -75,7 +175,7 @@ export const parseSLD = async (sldContent) => {
                   Math.min(1, parseFloat(paramValue))
                 );
                 console.log(
-                  `Setting fillOpacity to: ${style.fillOpacity} from ${paramValue}`
+                  `Setting polygon fillOpacity to: ${style.fillOpacity} from ${paramValue}`
                 );
               }
             });
@@ -94,17 +194,18 @@ export const parseSLD = async (sldContent) => {
             const params = Array.isArray(svgParams) ? svgParams : [svgParams];
             params.forEach((param) => {
               const paramName = param["@_name"];
-              const paramValue = param["#text"] || param;
+              const paramValue =
+                typeof param === "object" ? param["#text"] || param : param;
 
               if (paramName === "stroke") {
                 style.color = normalizeColor(paramValue);
                 console.log(
-                  `Setting stroke color to: ${style.color} from ${paramValue}`
+                  `Setting polygon stroke color to: ${style.color} from ${paramValue}`
                 );
               } else if (paramName === "stroke-width") {
                 style.weight = Math.max(1, parseFloat(paramValue));
                 console.log(
-                  `Setting stroke width to: ${style.weight} from ${paramValue}`
+                  `Setting polygon stroke width to: ${style.weight} from ${paramValue}`
                 );
               } else if (paramName === "stroke-opacity") {
                 style.opacity = Math.max(
@@ -112,7 +213,7 @@ export const parseSLD = async (sldContent) => {
                   Math.min(1, parseFloat(paramValue))
                 );
                 console.log(
-                  `Setting stroke opacity to: ${style.opacity} from ${paramValue}`
+                  `Setting polygon stroke opacity to: ${style.opacity} from ${paramValue}`
                 );
               }
             });

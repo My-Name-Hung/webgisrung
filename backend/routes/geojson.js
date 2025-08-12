@@ -65,7 +65,7 @@ router.get("/", async (req, res) => {
 // Add new GeoJSON map
 router.post("/", verifyToken, async (req, res) => {
   try {
-    const { name, type, data } = req.body;
+    const { name, type, data, sldData } = req.body;
 
     // Validate required fields
     if (!name || !type || !data) {
@@ -84,12 +84,19 @@ router.post("/", verifyToken, async (req, res) => {
       });
     }
 
-    const geoJSONMap = new GeoJSONMap({
+    const mapData = {
       name,
       type,
       data,
       createdAt: new Date(),
-    });
+    };
+
+    // Add SLD data if provided
+    if (sldData) {
+      mapData.sldData = sldData;
+    }
+
+    const geoJSONMap = new GeoJSONMap(mapData);
 
     await geoJSONMap.save();
     res.status(201).json({
@@ -111,7 +118,7 @@ router.post("/", verifyToken, async (req, res) => {
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, type, data } = req.body;
+    const { name, type, data, sldData } = req.body;
 
     // Validate required fields
     if (!name || !type || !data) {
@@ -130,16 +137,21 @@ router.put("/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const updatedMap = await GeoJSONMap.findByIdAndUpdate(
-      id,
-      {
-        name,
-        type,
-        data,
-        updatedAt: new Date(),
-      },
-      { new: true }
-    );
+    const updateData = {
+      name,
+      type,
+      data,
+      updatedAt: new Date(),
+    };
+
+    // Add SLD data if provided
+    if (sldData) {
+      updateData.sldData = sldData;
+    }
+
+    const updatedMap = await GeoJSONMap.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
 
     if (!updatedMap) {
       return res.status(404).json({

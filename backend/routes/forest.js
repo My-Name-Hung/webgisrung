@@ -266,15 +266,22 @@ router.post("/types", verifyToken, async (req, res) => {
 // Update status routes to handle GeoJSON data
 router.post("/status", verifyToken, async (req, res) => {
   try {
-    const { type, area, quality, lastSurvey, geojson } = req.body;
+    const { type, area, quality, lastSurvey, geojson, sldData } = req.body;
 
-    const newStatus = new ForestStatus({
+    const statusData = {
       type,
       area,
       quality,
       lastSurvey,
       geojson,
-    });
+    };
+
+    // Add SLD data if provided
+    if (sldData) {
+      statusData.sldData = sldData;
+    }
+
+    const newStatus = new ForestStatus(statusData);
 
     await newStatus.save();
     res.status(201).json({
@@ -309,19 +316,24 @@ router.get("/status", async (req, res) => {
 router.put("/status/:id", verifyToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, area, quality, lastSurvey, geojson } = req.body;
+    const { type, area, quality, lastSurvey, geojson, sldData } = req.body;
 
-    const updatedStatus = await ForestStatus.findByIdAndUpdate(
-      id,
-      {
-        type,
-        area,
-        quality,
-        lastSurvey,
-        geojson,
-      },
-      { new: true }
-    );
+    const updateData = {
+      type,
+      area,
+      quality,
+      lastSurvey,
+      geojson,
+    };
+
+    // Add SLD data if provided
+    if (sldData) {
+      updateData.sldData = sldData;
+    }
+
+    const updatedStatus = await ForestStatus.findByIdAndUpdate(id, updateData, {
+      new: true,
+    });
 
     if (!updatedStatus) {
       return res.status(404).json({
@@ -430,9 +442,10 @@ router.post("/planning", verifyToken, async (req, res) => {
       endDate,
       description,
       geojson,
+      sldData,
     } = req.body;
 
-    const newPlanning = new ForestPlanning({
+    const planningData = {
       name,
       area,
       type,
@@ -441,7 +454,14 @@ router.post("/planning", verifyToken, async (req, res) => {
       endDate,
       description,
       geojson,
-    });
+    };
+
+    // Add SLD data if provided
+    if (sldData) {
+      planningData.sldData = sldData;
+    }
+
+    const newPlanning = new ForestPlanning(planningData);
 
     await newPlanning.save();
     res.status(201).json({
@@ -485,20 +505,28 @@ router.put("/planning/:id", verifyToken, async (req, res) => {
       endDate,
       description,
       geojson,
+      sldData,
     } = req.body;
+
+    const updateData = {
+      name,
+      area,
+      type,
+      status,
+      startDate,
+      endDate,
+      description,
+      geojson,
+    };
+
+    // Add SLD data if provided
+    if (sldData) {
+      updateData.sldData = sldData;
+    }
 
     const updatedPlanning = await ForestPlanning.findByIdAndUpdate(
       id,
-      {
-        name,
-        area,
-        type,
-        status,
-        startDate,
-        endDate,
-        description,
-        geojson,
-      },
+      updateData,
       { new: true }
     );
 

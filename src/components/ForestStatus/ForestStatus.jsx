@@ -21,7 +21,7 @@ import * as turf from "@turf/turf";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Bar } from "react-chartjs-2";
 import ReactDOMServer from "react-dom/server";
 import {
@@ -35,15 +35,8 @@ import shp from "shpjs";
 import { forestStatusSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
 import { applyStyle, parseSLD } from "../../utils/sldParser";
+import "../shared/sld-styles.css";
 import "./ForestStatus.css";
-
-const defaultStyle = {
-  fillColor: "#2d5a27",
-  weight: 2,
-  opacity: 1,
-  color: "#2d5a27",
-  fillOpacity: 0.3,
-};
 
 const CustomMarkerIcon = () => (
   <div className="custom-marker-container">
@@ -171,31 +164,71 @@ const ForestStatus = () => {
   });
 
   const handleEdit = (status) => {
-    setSelectedStatus(status);
     setFormData({
       type: status.type,
       area: status.area,
       quality: status.quality,
-      lastSurvey: new Date(status.lastSurvey).toISOString().split("T")[0],
+      lastSurvey: status.lastSurvey.split("T")[0],
       geojson: status.geojson,
     });
     setPreviewData({
       type: status.type,
       area: status.area,
       quality: status.quality,
-      lastSurvey: status.lastSurvey,
+      lastSurvey: status.lastSurvey.split("T")[0],
       geojson: status.geojson,
     });
+    setSelectedStatus(status);
     setEditMode(true);
 
-    // Show data on map if available
+    // Load SLD data if available
+    if (status.sldData) {
+      if (status.sldData.styles) {
+        setMapStyle(status.sldData.styles);
+      }
+      // Note: We can't restore the actual file object, but we have the content
+      // The user would need to re-upload if they want to modify the SLD
+    }
+
+    // Display the status data on the map
     if (status.geojson) {
       if (previewLayer.current) {
         leafletMap.current.removeLayer(previewLayer.current);
       }
 
+      // Load SLD styles if available for display
+      let stylesToApply = null;
+      if (status.sldData && status.sldData.styles) {
+        stylesToApply = status.sldData.styles;
+      }
+
       previewLayer.current = L.geoJSON(status.geojson, {
-        pointToLayer: createCustomMarker,
+        pointToLayer: (feature, latlng) => {
+          if (stylesToApply) {
+            const style = applyStyle(feature, stylesToApply);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
+          }
+          return createCustomMarker(feature, latlng);
+        },
+        style: (feature) => {
+          if (stylesToApply) {
+            return applyStyle(feature, stylesToApply);
+          }
+          return {
+            fillColor: "#2d5a27",
+            weight: 2,
+            opacity: 1,
+            color: "#2d5a27",
+            fillOpacity: 0.7,
+          };
+        },
         onEachFeature: (feature, layer) => {
           if (feature.geometry.type !== "Point") {
             if (feature.properties) {
@@ -267,6 +300,14 @@ const ForestStatus = () => {
         area: parseFloat(previewData.area.toString().replace(/,/g, "")),
       };
 
+      // Include SLD data if available
+      if (mapStyle && sldFile) {
+        data.sldData = {
+          content: await sldFile.text(), // Save the raw SLD content
+          styles: mapStyle, // Save the parsed styles
+        };
+      }
+
       if (editMode && selectedStatus) {
         await axios.put(
           `${import.meta.env.VITE_SERVER_URL}/api/forest/status/${
@@ -274,13 +315,13 @@ const ForestStatus = () => {
           }`,
           data
         );
-        setSuccess("Cập nhật hiện trạng rừng thành công");
+        setSuccess("Cập nhật hiện trạng thành công");
       } else {
         await axios.post(
           `${import.meta.env.VITE_SERVER_URL}/api/forest/status`,
           data
         );
-        setSuccess("Thêm hiện trạng rừng thành công");
+        setSuccess("Thêm hiện trạng thành công");
       }
 
       resetForm();
@@ -423,14 +464,39 @@ const ForestStatus = () => {
 
       previewLayer.current = L.geoJSON(geoJsonData, {
         pointToLayer: (feature, latlng) => {
-          const style = mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+          if (mapStyle) {
+            const style = applyStyle(feature, mapStyle);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
+          }
+          // Default style for points
           return L.circleMarker(latlng, {
-            ...style,
-            radius: 8, // Fixed radius for points
+            radius: 8,
+            fillColor: "#ff7800",
+            color: "#000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8,
           });
         },
         style: (feature) => {
-          return mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+          if (mapStyle) {
+            return applyStyle(feature, mapStyle);
+          }
+          // Default style for polygons/lines
+          return {
+            fillColor: "#2d5a27",
+            weight: 2,
+            opacity: 1,
+            color: "#2d5a27",
+            fillOpacity: 0.7,
+          };
         },
         onEachFeature: (feature, layer) => {
           if (feature.properties) {
@@ -488,9 +554,19 @@ const ForestStatus = () => {
       // Re-render map with new style if data exists
       if (previewLayer.current && formData.geojson) {
         leafletMap.current.removeLayer(previewLayer.current);
+
+        // Create new layer with updated style
         previewLayer.current = L.geoJSON(formData.geojson, {
           pointToLayer: (feature, latlng) => {
-            return L.circleMarker(latlng, applyStyle(feature, styleRules));
+            const style = applyStyle(feature, styleRules);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
           },
           style: (feature) => {
             return applyStyle(feature, styleRules);
@@ -616,9 +692,41 @@ const ForestStatus = () => {
         leafletMap.current.removeLayer(previewLayer.current);
       }
 
+      // Load SLD styles if available
+      let stylesToApply = null;
+      if (status.sldData && status.sldData.styles) {
+        stylesToApply = status.sldData.styles;
+        setMapStyle(stylesToApply);
+        console.log("Loaded SLD styles from saved status:", stylesToApply);
+      }
+
       previewLayer.current = L.geoJSON(status.geojson, {
-        style: geoJSONStyle,
-        pointToLayer: pointToLayer,
+        pointToLayer: (feature, latlng) => {
+          if (stylesToApply) {
+            const style = applyStyle(feature, stylesToApply);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
+          }
+          return createCustomMarker(feature, latlng);
+        },
+        style: (feature) => {
+          if (stylesToApply) {
+            return applyStyle(feature, stylesToApply);
+          }
+          return {
+            fillColor: "#2d5a27",
+            weight: 2,
+            opacity: 1,
+            color: "#2d5a27",
+            fillOpacity: 0.7,
+          };
+        },
         onEachFeature: (feature, layer) => {
           if (feature.geometry.type !== "Point") {
             if (feature.properties) {
@@ -646,35 +754,6 @@ const ForestStatus = () => {
       leafletMap.current.fitBounds(previewLayer.current.getBounds());
     }
   };
-
-  // Style function for uploaded GeoJSON
-  const geoJSONStyle = useCallback(
-    (feature) => {
-      if (mapStyle) {
-        return applyStyle(feature, mapStyle);
-      }
-      return {
-        fillColor: "#2d5a27",
-        weight: 2,
-        opacity: 1,
-        color: "#2d5a27",
-        fillOpacity: 0.7,
-      };
-    },
-    [mapStyle]
-  );
-
-  // Point to layer function for uploaded GeoJSON
-  const pointToLayer = useCallback(
-    (feature, latlng) => {
-      if (mapStyle) {
-        const style = applyStyle(feature, mapStyle);
-        return createCustomMarker(feature, latlng).setStyle(style);
-      }
-      return createCustomMarker(feature, latlng);
-    },
-    [mapStyle]
-  );
 
   return (
     <div className="foreststatus-container">

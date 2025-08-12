@@ -23,6 +23,14 @@ const forestStatusSchema = new mongoose.Schema({
   geojson: {
     type: mongoose.Schema.Types.Mixed,
   },
+  sldData: {
+    content: {
+      type: String, // Raw SLD XML content
+    },
+    styles: {
+      type: mongoose.Schema.Types.Mixed, // Parsed style rules
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -153,6 +161,14 @@ const forestPlanningSchema = new mongoose.Schema({
   geojson: {
     type: mongoose.Schema.Types.Mixed,
   },
+  sldData: {
+    content: {
+      type: String, // Raw SLD XML content
+    },
+    styles: {
+      type: mongoose.Schema.Types.Mixed, // Parsed style rules
+    },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -272,6 +288,14 @@ const geoJSONMapSchema = new mongoose.Schema({
         },
       },
     ],
+  },
+  sldData: {
+    content: {
+      type: String, // Raw SLD XML content
+    },
+    styles: {
+      type: mongoose.Schema.Types.Mixed, // Parsed style rules
+    },
   },
   createdAt: {
     type: Date,

@@ -233,6 +233,42 @@ const MonitoringPoints = () => {
     }
   };
 
+  // Helper function to update marker position safely
+  const updateMarkerPosition = (
+    latitude,
+    longitude,
+    shouldPanToMarker = false
+  ) => {
+    if (!leafletMap.current || latitude === 0 || longitude === 0) {
+      return;
+    }
+
+    // Validate coordinates
+    if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+      console.error("Invalid coordinates for marker:", { latitude, longitude });
+      return;
+    }
+
+    // Remove existing marker
+    if (markerRef.current) {
+      leafletMap.current.removeLayer(markerRef.current);
+    }
+
+    // Create new marker
+    const marker = createCustomMarker(null, [latitude, longitude]);
+    if (marker) {
+      markerRef.current = marker.addTo(leafletMap.current);
+
+      // Pan to marker if requested
+      if (shouldPanToMarker) {
+        leafletMap.current.setView(
+          [latitude, longitude],
+          leafletMap.current.getZoom()
+        );
+      }
+    }
+  };
+
   const createCustomMarker = (feature, latlng) => {
     // Validate latlng parameter
     if (!latlng || !Array.isArray(latlng) || latlng.length !== 2) {
@@ -274,14 +310,11 @@ const MonitoringPoints = () => {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         const newCoordinates = {
-          latitude: parseFloat(formData.coordinates.latitude.toFixed(6)),
-          longitude: parseFloat(formData.coordinates.longitude.toFixed(6)),
+          latitude:
+            name === "latitude" ? numValue : formData.coordinates.latitude,
+          longitude:
+            name === "longitude" ? numValue : formData.coordinates.longitude,
         };
-        if (name === "longitude") {
-          newCoordinates.longitude = numValue;
-        } else {
-          newCoordinates.latitude = numValue;
-        }
 
         const newFormData = {
           ...formData,
@@ -292,24 +325,24 @@ const MonitoringPoints = () => {
         // Update preview data if all required fields are filled
         if (
           Object.values(newFormData).every((v) => v !== "") &&
-          newFormData.coordinates.latitude !== 0 &&
-          newFormData.coordinates.longitude !== 0
+          newCoordinates.latitude !== 0 &&
+          newCoordinates.longitude !== 0 &&
+          Math.abs(newCoordinates.latitude) <= 90 &&
+          Math.abs(newCoordinates.longitude) <= 180
         ) {
           setPreviewData(newFormData);
         }
 
-        // Update marker on map
-        if (leafletMap.current) {
-          if (markerRef.current) {
-            markerRef.current.remove();
-          }
-          markerRef.current = createCustomMarker([
+        // Update marker on map with proper coordinates
+        if (
+          leafletMap.current &&
+          newCoordinates.latitude !== 0 &&
+          newCoordinates.longitude !== 0
+        ) {
+          updateMarkerPosition(
             newCoordinates.latitude,
             newCoordinates.longitude,
-          ]).addTo(leafletMap.current);
-          leafletMap.current.setView(
-            [newCoordinates.latitude, newCoordinates.longitude],
-            leafletMap.current.getZoom()
+            true
           );
         }
       }
@@ -350,10 +383,6 @@ const MonitoringPoints = () => {
   });
 
   const handleView = (point) => {
-    if (markerRef.current) {
-      leafletMap.current.removeLayer(markerRef.current);
-    }
-
     if (
       !point.coordinates ||
       !point.coordinates.coordinates ||
@@ -365,11 +394,8 @@ const MonitoringPoints = () => {
     }
 
     const [lng, lat] = point.coordinates.coordinates;
-    const marker = createCustomMarker(null, [lat, lng]);
-    if (marker) {
-      markerRef.current = marker.addTo(leafletMap.current);
-      leafletMap.current.setView([lat, lng], 15);
-    }
+    updateMarkerPosition(lat, lng, true);
+    leafletMap.current.setView([lat, lng], 15);
   };
 
   const handleEdit = (point) => {
@@ -405,16 +431,8 @@ const MonitoringPoints = () => {
     setEditMode(true);
 
     // Update map marker
-    if (markerRef.current) {
-      leafletMap.current.removeLayer(markerRef.current);
-    }
-
     const [lng, lat] = point.coordinates.coordinates;
-    const marker = createCustomMarker(null, [lat, lng]);
-    if (marker) {
-      markerRef.current = marker.addTo(leafletMap.current);
-      leafletMap.current.setView([lat, lng], leafletMap.current.getZoom());
-    }
+    updateMarkerPosition(lat, lng, true);
   };
 
   const handleDelete = (point) => {
@@ -430,8 +448,8 @@ const MonitoringPoints = () => {
       setSuccess("Xóa điểm quan trắc thành công");
       fetchPoints();
 
-      if (markerRef.current) {
-        markerRef.current.remove();
+      if (markerRef.current && leafletMap.current) {
+        leafletMap.current.removeLayer(markerRef.current);
         markerRef.current = null;
       }
     } catch (err) {
@@ -504,8 +522,8 @@ const MonitoringPoints = () => {
     setSelectedPoint(null);
     setEditMode(false);
 
-    if (markerRef.current) {
-      markerRef.current.remove();
+    if (markerRef.current && leafletMap.current) {
+      leafletMap.current.removeLayer(markerRef.current);
       markerRef.current = null;
     }
   };
@@ -514,22 +532,28 @@ const MonitoringPoints = () => {
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
 
+    const newCoordinates = {
+      latitude: parseFloat(lat.toFixed(6)),
+      longitude: parseFloat(lng.toFixed(6)),
+    };
+
     setFormData((prev) => ({
       ...prev,
-      coordinates: {
-        latitude: parseFloat(lat.toFixed(6)),
-        longitude: parseFloat(lng.toFixed(6)),
-      },
+      coordinates: newCoordinates,
     }));
 
-    if (markerRef.current) {
-      leafletMap.current.removeLayer(markerRef.current);
+    // Update preview data if form is complete
+    const updatedFormData = { ...formData, coordinates: newCoordinates };
+    if (
+      Object.values(updatedFormData).every((v) => v !== "") &&
+      newCoordinates.latitude !== 0 &&
+      newCoordinates.longitude !== 0
+    ) {
+      setPreviewData(updatedFormData);
     }
 
-    const marker = createCustomMarker(null, [lat, lng]);
-    if (marker) {
-      markerRef.current = marker.addTo(leafletMap.current);
-    }
+    // Update marker position
+    updateMarkerPosition(lat, lng);
   };
 
   const validateFormData = () => {
@@ -727,8 +751,8 @@ const MonitoringPoints = () => {
             className="map-control-button"
             onClick={(e) => {
               e.preventDefault();
-              if (markerRef.current) {
-                markerRef.current.remove();
+              if (markerRef.current && leafletMap.current) {
+                leafletMap.current.removeLayer(markerRef.current);
                 markerRef.current = null;
                 setFormData((prev) => ({
                   ...prev,
@@ -737,9 +761,10 @@ const MonitoringPoints = () => {
                     longitude: 0,
                   },
                 }));
+                setPreviewData(null);
               }
             }}
-            title="Xóa điểm"
+            title="Xóa marker"
           >
             <FaTrash />
           </button>

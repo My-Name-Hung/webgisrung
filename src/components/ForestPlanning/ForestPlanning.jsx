@@ -21,7 +21,7 @@ import * as turf from "@turf/turf";
 import axios from "axios";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import {
   FaFileUpload,
@@ -33,7 +33,8 @@ import {
 import shp from "shpjs";
 import { forestPlanningSteps } from "../../config/tourSteps";
 import useCustomTour from "../../hooks/useTour";
-import { applyStyle, defaultStyle, parseSLD } from "../../utils/sldParser";
+import { applyStyle, parseSLD } from "../../utils/sldParser";
+import "../shared/sld-styles.css";
 import "./ForestPlanning.css";
 
 // Add default planning types
@@ -165,14 +166,13 @@ const ForestPlanning = () => {
   });
 
   const handleEdit = (planning) => {
-    setSelectedPlanning(planning);
     setFormData({
       name: planning.name,
       area: planning.area,
       type: planning.type,
       status: planning.status,
-      startDate: new Date(planning.startDate).toISOString().split("T")[0],
-      endDate: new Date(planning.endDate).toISOString().split("T")[0],
+      startDate: planning.startDate.split("T")[0],
+      endDate: planning.endDate.split("T")[0],
       description: planning.description,
       geojson: planning.geojson,
     });
@@ -181,21 +181,62 @@ const ForestPlanning = () => {
       area: planning.area,
       type: planning.type,
       status: planning.status,
-      startDate: planning.startDate,
-      endDate: planning.endDate,
+      startDate: planning.startDate.split("T")[0],
+      endDate: planning.endDate.split("T")[0],
       description: planning.description,
       geojson: planning.geojson,
     });
+    setSelectedPlanning(planning);
     setEditMode(true);
 
-    // Show data on map if available
+    // Load SLD data if available
+    if (planning.sldData) {
+      if (planning.sldData.styles) {
+        setMapStyle(planning.sldData.styles);
+      }
+      // Note: We can't restore the actual file object, but we have the content
+      // The user would need to re-upload if they want to modify the SLD
+    }
+
+    // Display the planning data on the map
     if (planning.geojson) {
       if (previewLayer.current) {
         leafletMap.current.removeLayer(previewLayer.current);
       }
 
+      // Load SLD styles if available for display
+      let stylesToApply = null;
+      if (planning.sldData && planning.sldData.styles) {
+        stylesToApply = planning.sldData.styles;
+      }
+
       previewLayer.current = L.geoJSON(planning.geojson, {
-        pointToLayer: createCustomMarker,
+        pointToLayer: (feature, latlng) => {
+          if (stylesToApply) {
+            const style = applyStyle(feature, stylesToApply);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
+          }
+          return createCustomMarker(feature, latlng);
+        },
+        style: (feature) => {
+          if (stylesToApply) {
+            return applyStyle(feature, stylesToApply);
+          }
+          return {
+            fillColor: "#2d5a27",
+            weight: 2,
+            opacity: 1,
+            color: "#2d5a27",
+            fillOpacity: 0.7,
+          };
+        },
         onEachFeature: (feature, layer) => {
           if (feature.geometry.type !== "Point") {
             if (feature.properties) {
@@ -266,6 +307,14 @@ const ForestPlanning = () => {
         ...previewData,
         area: parseFloat(previewData.area.toString().replace(/,/g, "")),
       };
+
+      // Include SLD data if available
+      if (mapStyle && sldFile) {
+        data.sldData = {
+          content: await sldFile.text(), // Save the raw SLD content
+          styles: mapStyle, // Save the parsed styles
+        };
+      }
 
       if (editMode && selectedPlanning) {
         await axios.put(
@@ -424,14 +473,39 @@ const ForestPlanning = () => {
 
       previewLayer.current = L.geoJSON(geoJsonData, {
         pointToLayer: (feature, latlng) => {
-          const style = mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+          if (mapStyle) {
+            const style = applyStyle(feature, mapStyle);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
+          }
+          // Default style for points
           return L.circleMarker(latlng, {
-            ...style,
-            radius: 8, // Fixed radius for points
+            radius: 8,
+            fillColor: "#ff7800",
+            color: "#000",
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8,
           });
         },
         style: (feature) => {
-          return mapStyle ? applyStyle(feature, mapStyle) : defaultStyle;
+          if (mapStyle) {
+            return applyStyle(feature, mapStyle);
+          }
+          // Default style for polygons/lines
+          return {
+            fillColor: "#2d5a27",
+            weight: 2,
+            opacity: 1,
+            color: "#2d5a27",
+            fillOpacity: 0.7,
+          };
         },
         onEachFeature: (feature, layer) => {
           if (feature.properties) {
@@ -493,7 +567,15 @@ const ForestPlanning = () => {
         // Create new layer with updated style
         previewLayer.current = L.geoJSON(formData.geojson, {
           pointToLayer: (feature, latlng) => {
-            return L.circleMarker(latlng, applyStyle(feature, styleRules));
+            const style = applyStyle(feature, styleRules);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
           },
           style: (feature) => {
             return applyStyle(feature, styleRules);
@@ -596,9 +678,41 @@ const ForestPlanning = () => {
         leafletMap.current.removeLayer(previewLayer.current);
       }
 
+      // Load SLD styles if available
+      let stylesToApply = null;
+      if (planning.sldData && planning.sldData.styles) {
+        stylesToApply = planning.sldData.styles;
+        setMapStyle(stylesToApply);
+        console.log("Loaded SLD styles from saved planning:", stylesToApply);
+      }
+
       previewLayer.current = L.geoJSON(planning.geojson, {
-        style: geoJSONStyle,
-        pointToLayer: pointToLayer,
+        pointToLayer: (feature, latlng) => {
+          if (stylesToApply) {
+            const style = applyStyle(feature, stylesToApply);
+            return L.circleMarker(latlng, {
+              fillColor: style.fillColor,
+              color: style.color,
+              weight: style.weight,
+              opacity: style.opacity,
+              fillOpacity: style.fillOpacity,
+              radius: style.radius || 8,
+            });
+          }
+          return createCustomMarker(feature, latlng);
+        },
+        style: (feature) => {
+          if (stylesToApply) {
+            return applyStyle(feature, stylesToApply);
+          }
+          return {
+            fillColor: "#2d5a27",
+            weight: 2,
+            opacity: 1,
+            color: "#2d5a27",
+            fillOpacity: 0.7,
+          };
+        },
         onEachFeature: (feature, layer) => {
           if (feature.geometry.type !== "Point") {
             if (feature.properties) {
@@ -626,35 +740,6 @@ const ForestPlanning = () => {
       leafletMap.current.fitBounds(previewLayer.current.getBounds());
     }
   };
-
-  // Style function for uploaded GeoJSON
-  const geoJSONStyle = useCallback(
-    (feature) => {
-      if (mapStyle) {
-        return applyStyle(feature, mapStyle);
-      }
-      return {
-        fillColor: "#2d5a27",
-        weight: 2,
-        opacity: 1,
-        color: "#2d5a27",
-        fillOpacity: 0.7,
-      };
-    },
-    [mapStyle]
-  );
-
-  // Point to layer function for uploaded GeoJSON
-  const pointToLayer = useCallback(
-    (feature, latlng) => {
-      if (mapStyle) {
-        const style = applyStyle(feature, mapStyle);
-        return createCustomMarker(feature, latlng).setStyle(style);
-      }
-      return createCustomMarker(feature, latlng);
-    },
-    [mapStyle]
-  );
 
   return (
     <div className="forestplanning-container">
